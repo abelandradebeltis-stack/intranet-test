@@ -5,3 +5,5 @@ autopep8
 # App
 flask
 Flask-Migrate
+gunicorn
+python-dotenv
