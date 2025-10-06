@@ -1,9 +1,11 @@
-# Dev environment
-pip
-autopep8
-
-# App
-flask
-Flask-Migrate
+Flask>=2.2
 gunicorn
+psycopg2-binary
+SQLAlchemy
+Flask-Migrate
+alembic
+redis
+flask-login
 python-dotenv
+ldap3
+Flask-LDAP3-Login
