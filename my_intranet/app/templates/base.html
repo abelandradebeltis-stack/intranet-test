@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Minha Intranet{% endblock %}</title>
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Estilos Base -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <!-- Bloco para estilos específicos da página -->
+    {% block styles %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    {% if current_user.is_authenticated %}
+    <header class="top-bar">
+        <div class="top-bar-left">
+            <button class="menu-toggle" id="menu-toggle" aria-label="Alternar menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1>{% block page_title %}{% endblock %}</h1>
+        </div>
+        <div class="top-bar-right">
+            <a href="{{ url_for('main.logout') }}" class="top-bar-link logout-button">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </a>
+        </div>
+    </header>
+    <div class="dashboard-body">
+        <nav class="sidebar" id="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('main.dashboard') }}" {% if request.endpoint == 'main.dashboard' %}class="active"{% endif %}><i class="fas fa-home"></i><span class="menu-text">Início</span></a></li>
+                <li class="has-submenu {% if request.endpoint.startswith('marketing.') %}is-open{% endif %}">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-lightbulb"></i>
+                        <span class="menu-text">Marketing</span>
+                        <i class="fas fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <ul class="sidebar-submenu">
+                        <li><a href="{{ url_for('marketing.administracao') }}" {% if request.endpoint == 'marketing.administracao' %}class="active"{% endif %}><span class="submenu-text">Administração</span></a></li>
+                        <li><a href="{{ url_for('marketing.publicar') }}" {% if request.endpoint == 'marketing.publicar' %}class="active"{% endif %}><span class="submenu-text">Publicações</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.marketing_campanhas' %}class="active"{% endif %}><span class="submenu-text">Campanhas</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.marketing_clientes' %}class="active"{% endif %}><span class="submenu-text">Clientes</span></a></li>
+                    </ul>
+                </li>
+                <li class="has-submenu {% if request.endpoint.startswith('eventos.') %}is-open{% endif %}">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span class="menu-text">Eventos</span>
+                        <i class="fas fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <ul class="sidebar-submenu">
+                        <li><a href="{{ url_for('eventos.administracao') }}" {% if request.endpoint == 'eventos.administracao' %}class="active"{% endif %}><span class="submenu-text">Administração</span></a></li>
+                        <li><a href="{{ url_for('eventos.publicar') }}" {% if request.endpoint == 'eventos.publicar' %}class="active"{% endif %}><span class="submenu-text">Publicações</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.eventos_agendamentos' %}class="active"{% endif %}><span class="submenu-text">Agendamentos</span></a></li>
+                    </ul>
+                </li>
+                <li class="has-submenu {% if request.endpoint.startswith('main.administracao') %}is-open{% endif %}">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-user-shield"></i>
+                        <span class="menu-text">Administração</span>
+                        <i class="fas fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <ul class="sidebar-submenu">
+                        <li><a href="{{ url_for('main.administracao') }}" {% if request.endpoint == 'main.administracao' %}class="active"{% endif %}><span class="submenu-text">Painel</span></a></li>
+                        <li><a href="{{ url_for('main.administracao_usuarios') }}" {% if request.endpoint == 'main.administracao_usuarios' %}class="active"{% endif %}><span class="submenu-text">Usuários</span></a></li>
+                    </ul>
+                </li>
+                <li class="has-submenu">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-laptop-code"></i>
+                        <span class="menu-text">Sistemas</span>
+                        <i class="fas fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <ul class="sidebar-submenu">
+                        <li><a href="#"><span class="submenu-text">Suporte</span></a></li>
+                        <li><a href="#"><span class="submenu-text">Inventário</span></a></li>
+                        <li><a href="#"><span class="submenu-text">Ferramentas</span></a></li>
+                        <li><a href="https://webmailpro.uol.com.br/"  target="_blank" ><span class="submenu-text">Webmail</span></a></li>
+                    </ul>
+                </li>
+                <li class="has-submenu {% if request.endpoint.startswith('main.ramais') %}is-open{% endif %}">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-address-book"></i>
+                        <span class="menu-text">Contato</span>
+                        <i class="fas fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <ul class="sidebar-submenu">
+                        <li><a href="{{ url_for('main.ramais') }}" {% if request.endpoint == 'main.ramais' %}class="active"{% endif %}><span class="submenu-text">Ramais</span></a></li>
+                        <li><a href="#"><span class="submenu-text">E-mails</span></a></li>
+                        <li><a href="#"><span class="submenu-text">Discord</span></a></li>
+                        <li><a href="#"><span class="submenu-text">Whatsapp</span></a></li>
+                    </ul>
+                </li>
+                <li class="has-submenu {% if request.endpoint.startswith('main.administrativo') %}is-open{% endif %}">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-briefcase"></i>
+                        <span class="menu-text">Administrativo</span>
+                        <i class="fas fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <ul class="sidebar-submenu">
+                        <li><a href="#" {% if request.endpoint == 'main.administrativo_clientes' %}class="active"{% endif %}><span class="submenu-text">Nossos Clientes</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.administrativo_gerencia' %}class="active"{% endif %}><span class="submenu-text">Gerencia</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.administrativo_diretoria' %}class="active"{% endif %}><span class="submenu-text">Diretoria</span></a></li>
+                    </ul>
+                </li>
+                <li class="has-submenu {% if request.endpoint.startswith('main.rh') %}is-open{% endif %}">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-id-badge"></i>
+                        <span class="menu-text">RH</span>
+                        <i class="fas fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <ul class="sidebar-submenu">
+                        <li><a href="#" {% if request.endpoint == 'main.rh_recrutamento' %}class="active"{% endif %}><span class="submenu-text">Recrutamento</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.rh_beneficios' %}class="active"{% endif %}><span class="submenu-text">Benefícios</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.rh_folha_de_pagamento' %}class="active"{% endif %}><span class="submenu-text">Folha de Pagamento</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.rh_avaliacoes' %}class="active"{% endif %}><span class="submenu-text">Avaliações de Desempenho</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.rh_administracao' %}class="active"{% endif %}><span class="submenu-text">Administração</span></a></li>
+                    </ul>
+                </li>
+                <li class="has-submenu">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-id-badge"></i>
+                        <span class="menu-text">RH Externo</span>
+                        <i class="fas fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <ul class="sidebar-submenu">
+                        <li><a href="http://backoffice.beltis.com.br/Login?ReturnUrl=%2F" target="_blank"><span class="submenu-text">Portal RH</span></a></li>
+                        <li><a href="http://backoffice.beltis.com.br/CustomerPortal/AssignDocument/Vacation" target="_blank"><span class="submenu-text">Férias</span></a></li>
+                        <li><a href="http://backoffice.beltis.com.br/CustomerPortal/AssignDocument/Payment" target="_blank"><span class="submenu-text">Holerites</span></a></li>
+                    </ul>
+                </li>
+                <li class="has-submenu {% if request.endpoint.startswith('main.financeiro') %}is-open{% endif %}">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span class="menu-text">Financeiro</span>
+                        <i class="fas fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <ul class="sidebar-submenu">
+                        <li><a href="#" {% if request.endpoint == 'main.financeiro_contas_a_pagar' %}class="active"{% endif %}><span class="submenu-text">Contas a pagar</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.financeiro_contas_a_receber' %}class="active"{% endif %}><span class="submenu-text">Contas a receber</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.financeiro_operacoes' %}class="active"{% endif %}><span class="submenu-text">Operações</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.financeiro_relatorios' %}class="active"{% endif %}><span class="submenu-text">Relatórios</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.financeiro_administracao' %}class="active"{% endif %}><span class="submenu-text">Administração</span></a></li>
+                    </ul>
+                </li>
+                {% if current_user.is_in_group('TI') %}
+                <li class="has-submenu {% if request.endpoint.startswith('main.ti') %}is-open{% endif %}">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-desktop"></i>
+                        <span class="menu-text">TI</span>
+                        <i class="fas fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <ul class="sidebar-submenu">
+                        <li><a href="#" {% if request.endpoint == 'main.ti_administracao' %}class="active"{% endif %}><span class="submenu-text">Administração</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.ti_chamados' %}class="active"{% endif %}><span class="submenu-text">Chamados</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.ti_infraestrutura' %}class="active"{% endif %}><span class="submenu-text">Infraestrutura</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.ti_relatorios' %}class="active"{% endif %}><span class="submenu-text">Relatórios</span></a></li>
+                        <li><a href="#" {% if request.endpoint == 'main.ti_seguranca' %}class="active"{% endif %}><span class="submenu-text">Segurança</span></a></li>
+                    </ul>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <main class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message }}
+                                <button type="button" class="close-btn" onclick="this.parentElement.style.display='none';">&times;</button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            {% block content %}
+            <!-- O conteúdo da página será inserido aqui -->
+            {% endblock %}
+        </main>
+    </div>
+    {% else %}
+        {% block public_content %}
+        <!-- Conteúdo para páginas públicas -->
+        {% endblock %}
+    {% endif %}
+
+    {% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const sidebar = document.getElementById('sidebar');
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+            if (menuToggle) {
+                const isMobile = () => window.innerWidth <= 767;
+
+                // Função para alternar o menu
+                const toggleMenu = () => {
+                    if (isMobile()) {
+                        // No mobile, alterna a classe 'is-open' para mostrar/esconder
+                        sidebar.classList.toggle('is-open');
+                    } else {
+                        // No desktop, alterna a classe 'is-collapsed' para expandir/recolher
+                        sidebar.classList.toggle('is-collapsed');
+                    }
+                };
+
+                // Função para fechar o menu no mobile (se estiver aberto)
+                const closeMobileMenu = () => {
+                    if (isMobile() && sidebar.classList.contains('is-open')) {
+                        sidebar.classList.remove('is-open');
+                    }
+                };
+
+                // Evento de clique no botão do menu
+                menuToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleMenu();
+                });
+
+                // Evento de clique no overlay para fechar o menu
+                if(sidebarOverlay) {
+                    sidebarOverlay.addEventListener('click', closeMobileMenu);
+                }
+
+                // Lógica para o submenu
+                document.querySelectorAll('.submenu-toggle').forEach(toggle => {
+                    toggle.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        const parentLi = this.parentElement;
+
+                        if (sidebar.classList.contains('is-collapsed')) {
+                            sidebar.classList.remove('is-collapsed');
+                        }
+                        
+                        document.querySelectorAll('.has-submenu.is-open').forEach(openSubmenu => {
+                            if (openSubmenu !== parentLi) {
+                                openSubmenu.classList.remove('is-open');
+                            }
+                        });
+
+                        parentLi.classList.toggle('is-open');
+                    });
+                });
+            }
+        });
+    </script>
+    {% endblock %}
+</body>
+</html>

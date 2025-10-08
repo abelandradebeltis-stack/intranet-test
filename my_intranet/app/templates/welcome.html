@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Bem-vindo{% endblock %}
+
+{% block body_class %}welcome-page{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/welcome.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/carousel.css') }}">
+{% endblock %}
+
+{% block public_content %}
+<div class="welcome-container">
+    <!-- Cabeçalho com o nome da empresa e os botões -->
+    <header class="welcome-header">
+        <div class="container">
+            <img class="logo-img" src="../static/images/beltis_logo-Azul.png" alt="logo-beltis">
+            <div class="header-links">
+                <a href="https://beltistecnologia.com.br/" target="_blank" class="header-link-btn site-btn">
+                    <i class="fas fa-globe"></i> Nosso Site
+                </a>
+                <a href="https://webmailpro.uol.com.br/" target="_blank" class="header-link-btn webmail-btn">
+                    <i class="fas fa-envelope"></i> Webmail
+                </a>
+                <a href="{{ url_for('main.login') }}" class="header-link-btn login-btn">
+                    <i class="fas fa-user"></i> Área do Funcionário
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Seção principal de apresentação com carrossel -->
+    <div class="hero carousel-container">
+        <div class="carousel-slide active">
+            <img src="{{ url_for('static', filename='images/welcomeBackground1.jpg') }}" alt="Background Image 1">
+        </div>
+        <div class="carousel-slide">
+            <img src="{{ url_for('static', filename='images/welcomeBackground2.jpg') }}" alt="Background Image 2">
+        </div>
+        <div class="container hero-text">
+            <h2>Inovação e Excelência</h2>
+            <p>Conectando equipes e impulsionando resultados. Conheça a nossa cultura e junte-se a nós.</p>
+        </div>
+    </div>
+
+    <!-- Conteúdo da página: Sobre, Notícias, Eventos -->
+    <main class="container page-content">
+        <section id="about" class="welcome-section">
+            <h3>Sobre Nós</h3>
+            <p>Somos uma empresa líder em soluções inovadoras, comprometida com o sucesso dos nossos clientes e colaboradores. Nossa missão é transformar o mercado com tecnologia de ponta e um ambiente de trabalho colaborativo e inspirador.</p>
+        </section>
+
+        <section id="news" class="welcome-section">
+            <h3>Últimas Notícias</h3>
+            <div class="card-deck">
+                {% if news %}
+                    {% for item in news %}
+                        <div class="card">
+                            {% if item.image_url %}
+                                <img src="{{ url_for('static', filename=item.image_url) }}" alt="{{ item.title }}" class="card-img-top">
+                            {% endif %}
+                            <div class="card-body">
+                                <h4 class="card-title">{{ item.title }}</h4>
+                                <p class="card-text">{{ item.content | safe }}</p>
+                                <span class="card-date">{{ item.publication_date.strftime('%d de %B, %Y') }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="card">
+                        <p>Nenhuma notícia para exibir no momento.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <section id="events" class="welcome-section">
+            <h3>Próximos Eventos</h3>
+            <div class="card-deck">
+                {% if events %}
+                    {% for event in events %}
+                        <div class="card">
+                            {% if event.image_url %}
+                                <img src="{{ url_for('static', filename=event.image_url) }}" alt="{{ event.title }}" class="card-img-top">
+                            {% endif %}
+                            <div class="card-body">
+                                <h4 class="card-title">{{ event.title }}</h4>
+                                <p class="card-text">{{ event.description | safe }}</p>
+                                <span class="card-date">{{ event.event_date.strftime('%d de %B, %Y') }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                     <div class="card">
+                        <p>Nenhum evento programado.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="welcome-footer">
+        <p>&copy; 2025 Beltis &copy; Todos os direitos reservados &copy;</p>
+    </footer>
+</div>
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/carousel.js') }}"></script>
+{% endblock %}
+{% endblock public_content %}

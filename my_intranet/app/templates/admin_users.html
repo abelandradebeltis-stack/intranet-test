@@ -1,0 +1,689 @@
+{% extends "base.html" %}
+
+{% block title %}Administração de Usuários{% endblock %}
+
+{% block page_title %}Administração de Usuários{% endblock %}
+
+{% block body_class %}dashboard-page{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<style>
+    :root {
+        --primary-color: #007bff;
+        --secondary-color: #6c757d;
+        --success-color: #28a745;
+        --danger-color: #dc3545;
+        --warning-color: #ffc107;
+        --light-gray: #f8f9fa;
+        --border-color: #dee2e6;
+        --text-color: #212529;
+        --sidebar-width: 320px;
+    }
+
+    .admin-container {
+        display: flex;
+        height: calc(100vh - 120px);
+    }
+
+    /* --- Painel de Grupos (Esquerda) --- */
+    .groups-panel {
+        width: var(--sidebar-width);
+        border-right: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        transition: width 0.3s ease;
+        background-color: #f8f9fa;
+    }
+
+    .groups-header {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .groups-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+    }
+
+    #add-root-group-btn {
+        background: none;
+        border: none;
+        color: var(--primary-color);
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+
+    .groups-body {
+        padding: 1rem;
+        overflow-y: auto;
+        flex-grow: 1;
+    }
+
+    .group-tree, .group-tree ul {
+        list-style: none;
+        padding-left: 0;
+        margin: 0;
+    }
+
+    .group-tree ul {
+        padding-left: 20px;
+    }
+
+    .group-node {
+        display: flex;
+        align-items: center;
+        padding: 8px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        position: relative;
+    }
+
+    .group-node:hover, .group-node.selected {
+        background-color: #e9ecef;
+    }
+    
+    .group-node.selected {
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+
+    .group-name {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+    }
+    
+    .group-name .icon {
+        margin-right: 8px;
+        color: var(--secondary-color);
+        transition: transform 0.2s;
+    }
+
+    .group-actions {
+        display: none;
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 2px;
+    }
+
+    .group-node:hover .group-actions {
+        display: flex;
+    }
+
+    .group-actions button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+        margin-left: 8px;
+        color: var(--secondary-color);
+    }
+    .group-actions button:hover {
+        color: var(--primary-color);
+    }
+    .group-actions .btn-delete:hover {
+        color: var(--danger-color);
+    }
+    
+    .group-tree li > ul { display: none; }
+    .group-tree li.expanded > ul { display: block; }
+    .group-tree .collapsible > .group-node .icon { transform: rotate(-90deg); }
+    .group-tree .collapsible.expanded > .group-node .icon { transform: rotate(0deg); }
+
+
+    /* --- Painel de Usuários (Direita) --- */
+    .users-panel {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .users-header {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #f8f9fa;
+    }
+    .users-header h3 { margin: 0; }
+    #selected-group-name { color: var(--primary-color); }
+
+    #add-user-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    #add-user-btn:hover { background-color: #0056b3; }
+    
+    .users-body {
+        overflow-x: auto;
+        flex-grow: 1;
+    }
+
+    .users-table { width: 100%; border-collapse: collapse; }
+    .users-table th, .users-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .users-table thead { background-color: #e9ecef; }
+    .users-table tbody tr:hover { background-color: #f1f1f1; }
+    .status-active { color: var(--success-color); }
+    .status-suspended { color: var(--warning-color); }
+    .status-blocked { color: var(--danger-color); }
+    .user-actions a, .user-actions button {
+        color: var(--secondary-color);
+        text-decoration: none;
+        margin-right: 15px;
+        background: none; border: none; cursor: pointer;
+    }
+    .user-actions a:hover { color: var(--primary-color); }
+    .user-actions .btn-delete:hover { color: var(--danger-color); }
+    #no-users-message { text-align: center; padding: 2rem; color: #6c757d; }
+
+    /* --- Modals --- */
+    .modal {
+        display: none; position: fixed; z-index: 1000;
+        left: 0; top: 0; width: 100%; height: 100%;
+        overflow: auto; background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+        background-color: #fefefe; margin: 10% auto; padding: 2rem;
+        border: 1px solid #888; width: 80%; max-width: 500px;
+        border-radius: 8px; position: relative;
+    }
+    .close-btn {
+        color: #aaa; position: absolute; top: 1rem; right: 1.5rem;
+        font-size: 2rem; font-weight: bold; cursor: pointer;
+    }
+    .close-btn:hover, .close-btn:focus { color: black; }
+    .modal-footer {
+        padding-top: 1.5rem; display: flex;
+        justify-content: flex-end; gap: 1rem;
+    }
+    .btn {
+        padding: 10px 20px; border-radius: 5px;
+        border: 1px solid transparent; cursor: pointer; font-size: 1rem;
+    }
+    .btn-primary { background-color: var(--primary-color); color: white; }
+    .btn-secondary { background-color: var(--secondary-color); color: white; }
+    .btn-danger { background-color: var(--danger-color); color: white; }
+
+    /* Estilos para o Modal de Usuário (AD-like) */
+    #group-selection-container {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 1rem;
+    }
+    .group-checkbox-item {
+        display: block;
+        margin-bottom: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- Painel da Esquerda: Grupos -->
+    <aside class="groups-panel">
+        <div class="groups-header">
+            <h3>Grupos</h3>
+            <button id="add-root-group-btn" title="Adicionar Grupo Raiz"><i class="fas fa-plus-circle"></i></button>
+        </div>
+        <div class="groups-body">
+            <ul id="group-tree" class="group-tree">
+                <!-- A árvore de grupos será carregada aqui via JS -->
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Painel da Direita: Usuários -->
+    <main class="users-panel">
+        <div class="users-header">
+            <h3>Usuários em <span id="selected-group-name">Nenhum</span></h3>
+            <button id="add-user-btn">
+                <i class="fas fa-plus"></i> Adicionar Usuário
+            </button>
+        </div>
+        <div class="users-body">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Usuário</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="users-table-body">
+                    <!-- Usuários serão carregados aqui via JS -->
+                </tbody>
+            </table>
+            <p id="no-users-message">Selecione um grupo para ver os usuários.</p>
+        </div>
+    </main>
+</div>
+
+<!-- Modal para Grupo -->
+<div id="group-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h3 id="group-modal-title"></h3>
+        <input type="hidden" id="group-id">
+        <input type="hidden" id="parent-group-id">
+        <div class="form-group">
+            <label for="group-name">Nome do Grupo</label>
+            <input type="text" id="group-name-input" class="form-control" required>
+        </div>
+        <div class="modal-footer">
+            <button id="save-group-btn" class="btn btn-primary">Salvar</button>
+            <button class="btn btn-secondary close-btn">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Usuário (AD Style) -->
+<div id="user-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h3 id="user-modal-title"></h3>
+        <input type="hidden" id="user-id">
+        <form id="user-form">
+            <div class="form-group">
+                <label for="username">Nome de Usuário</label>
+                <input type="text" id="username" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Senha</label>
+                <input type="password" id="password" class="form-control">
+                <small id="password-help" class="form-text text-muted">Deixe em branco para não alterar a senha.</small>
+            </div>
+            <div class="form-group">
+                <label>Membro dos Grupos</label>
+                <div id="group-selection-container">
+                    <!-- Checkboxes de grupo serão inseridos aqui via JS -->
+                </div>
+            </div>
+        </form>
+        <div class="modal-footer">
+            <button id="save-user-btn" class="btn btn-primary">Salvar</button>
+            <button class="btn btn-secondary close-btn">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal de Confirmação -->
+<div id="confirm-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="confirm-modal-title"></h3>
+        <p id="confirm-modal-body"></p>
+        <div class="modal-footer">
+            <button id="confirm-delete-btn" class="btn btn-danger">Excluir</button>
+            <button class="btn btn-secondary close-btn">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<template id="group-node-template">
+    <li data-group-id="">
+        <div class="group-node">
+            <span class="group-name">
+                <i class="fas fa-folder icon"></i>
+                <span class="name-text"></span>
+            </span>
+            <div class="group-actions">
+                <button class="btn-add-subgroup" title="Adicionar Subgrupo"><i class="fas fa-plus"></i></button>
+                <button class="btn-edit-group" title="Renomear Grupo"><i class="fas fa-pen"></i></button>
+                <button class="btn-delete-group" title="Excluir Grupo"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+        <ul></ul>
+    </li>
+</template>
+
+<template id="user-row-template">
+    <tr data-user-id="">
+        <td class="username"></td>
+        <td class="status"></td>
+        <td class="user-actions">
+            <a href="#" class="btn-edit-user" title="Editar"><i class="fas fa-pen"></i></a>
+            <a href="#" class="btn-suspend-user" title="Suspender/Reativar"><i class="fas fa-user-clock"></i></a>
+            <a href="#" class="btn-block-user" title="Bloquear/Desbloquear"><i class="fas fa-user-lock"></i></a>
+            <button class="btn-delete-user" title="Excluir"><i class="fas fa-trash"></i></button>
+        </td>
+    </tr>
+</template>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // State
+    let selectedGroupId = null;
+    let allGroups = []; // Cache para todos os grupos
+
+    // Elements
+    const groupTree = document.getElementById('group-tree');
+    const usersTableBody = document.getElementById('users-table-body');
+    const selectedGroupNameEl = document.getElementById('selected-group-name');
+    const noUsersMessage = document.getElementById('no-users-message');
+    const addUserBtn = document.getElementById('add-user-btn');
+
+    // Templates
+    const groupNodeTemplate = document.getElementById('group-node-template');
+    const userRowTemplate = document.getElementById('user-row-template');
+
+    // Modals
+    const groupModal = document.getElementById('group-modal');
+    const userModal = document.getElementById('user-modal');
+    const confirmModal = document.getElementById('confirm-modal');
+    
+    // --- API Functions ---
+    const api = {
+        getGroups: () => fetch("{{ url_for('main.get_groups_api') }}").then(res => res.json()),
+        createGroup: (name, parentId) => fetch("{{ url_for('main.create_group_api') }}", {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name, parent_id: parentId })
+        }).then(res => res.json()),
+        updateGroup: (id, name) => fetch(`{{ url_for('main.update_group_api', group_id=0) }}${id}`, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name })
+        }).then(res => res.json()),
+        deleteGroup: (id) => fetch(`{{ url_for('main.delete_group_api', group_id=0) }}${id}`, { method: 'DELETE' }).then(res => res.json()),
+        
+        getUsersByGroup: (groupId) => fetch(`{{ url_for('main.get_users_by_group_api', group_id=0) }}${groupId}`).then(res => res.json()),
+        
+        createUser: (username, password, groupIds) => fetch("{{ url_for('main.create_user_api') }}", {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username, password, group_ids: groupIds })
+        }).then(res => res.json()),
+
+        updateUser: (id, username, password, groupIds) => fetch(`{{ url_for('main.update_user_api', user_id=0) }}${id}`, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username, password, group_ids: groupIds })
+        }).then(res => res.json()),
+        
+        getUserGroups: (userId) => fetch(`{{ url_for('main.get_user_groups_api', user_id=0) }}${userId}`).then(res => res.json()),
+
+        deleteUser: (id) => fetch(`{{ url_for('main.delete_user_api', user_id=0) }}${id}`, { method: 'DELETE' }).then(res => res.json()),
+        toggleUserStatus: (id, statusType) => fetch(`{{ url_for('main.toggle_user_status_api', user_id=0, status_type='_') }}${id}/${statusType}`, { method: 'POST' }).then(res => res.json()),
+    };
+
+    // --- Render & UI Functions ---
+    function flattenGroups(groups, level = 0, flatList = []) {
+        groups.forEach(group => {
+            flatList.push({ id: group.id, name: group.name, level: level });
+            if (group.children) {
+                flattenGroups(group.children, level + 1, flatList);
+            }
+        });
+        return flatList;
+    }
+
+    function renderGroupTree(groups, container) {
+        container.innerHTML = '';
+        groups.forEach(group => {
+            const clone = groupNodeTemplate.content.cloneNode(true);
+            const li = clone.querySelector('li');
+            li.dataset.groupId = group.id;
+            li.querySelector('.name-text').textContent = group.name;
+            
+            const groupNode = li.querySelector('.group-node');
+            if (group.id === selectedGroupId) {
+                groupNode.classList.add('selected');
+            }
+            
+            if (group.children && group.children.length > 0) {
+                li.classList.add('collapsible');
+                renderGroupTree(group.children, li.querySelector('ul'));
+            }
+            container.appendChild(li);
+        });
+    }
+
+    function renderUsersTable(users) {
+        usersTableBody.innerHTML = '';
+        noUsersMessage.style.display = users.length === 0 ? 'block' : 'none';
+        noUsersMessage.textContent = 'Nenhum usuário neste grupo.';
+
+        users.forEach(user => {
+            const clone = userRowTemplate.content.cloneNode(true);
+            const tr = clone.querySelector('tr');
+            tr.dataset.userId = user.id;
+            tr.querySelector('.username').textContent = user.username;
+            
+            const statusEl = tr.querySelector('.status');
+            if(user.is_blocked) {
+                statusEl.textContent = 'Bloqueado';
+                statusEl.className = 'status status-blocked';
+            } else if (user.is_suspended) {
+                statusEl.textContent = 'Suspenso';
+                statusEl.className = 'status status-suspended';
+            } else {
+                statusEl.textContent = 'Ativo';
+                statusEl.className = 'status status-active';
+            }
+            usersTableBody.appendChild(tr);
+        });
+    }
+
+    async function loadAndRenderGroups() {
+        const result = await api.getGroups();
+        if (result.groups) {
+            allGroups = result.groups;
+            renderGroupTree(allGroups, groupTree);
+        }
+    }
+    
+    async function selectGroup(groupId) {
+        selectedGroupId = groupId;
+
+        document.querySelectorAll('.group-node.selected').forEach(el => el.classList.remove('selected'));
+        const selectedNode = groupTree.querySelector(`li[data-group-id='${groupId}'] > .group-node`);
+        if (selectedNode) {
+            selectedNode.classList.add('selected');
+            selectedGroupNameEl.textContent = selectedNode.querySelector('.name-text').textContent;
+        }
+        
+        noUsersMessage.textContent = "Carregando...";
+        usersTableBody.innerHTML = '';
+
+        const result = await api.getUsersByGroup(groupId);
+        renderUsersTable(result.users || []);
+    }
+    
+    // -- Group Modal Logic --
+    function openGroupModal(title, group = {}) {
+        document.getElementById('group-modal-title').textContent = title;
+        document.getElementById('group-id').value = group.id || '';
+        document.getElementById('parent-group-id').value = group.parent_id !== undefined ? group.parent_id : '';
+        document.getElementById('group-name-input').value = group.name || '';
+        groupModal.style.display = 'block';
+    }
+
+    // -- User Modal Logic (AD Style) --
+    function populateGroupSelection(container, groups, selectedGroupIds = []) {
+        container.innerHTML = '';
+        const flatGroups = flattenGroups(groups);
+        flatGroups.forEach(group => {
+            const label = document.createElement('label');
+            label.className = 'group-checkbox-item';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = group.id;
+            checkbox.checked = selectedGroupIds.includes(group.id);
+            
+            label.appendChild(checkbox);
+            label.append(` ${'—'.repeat(group.level)} ${group.name}`);
+            container.appendChild(label);
+        });
+    }
+
+    async function openUserModal(title, user = {}) {
+        document.getElementById('user-modal-title').textContent = title;
+        document.getElementById('user-id').value = user.id || '';
+        document.getElementById('username').value = user.username || '';
+        document.getElementById('password').value = '';
+        document.getElementById('password-help').style.display = user.id ? 'block' : 'none';
+
+        const groupContainer = document.getElementById('group-selection-container');
+        let selectedGroupIds = [];
+
+        if(user.id) {
+            const result = await api.getUserGroups(user.id);
+            selectedGroupIds = result.group_ids || [];
+        } else if (selectedGroupId) {
+            selectedGroupIds = [selectedGroupId];
+        }
+
+        populateGroupSelection(groupContainer, allGroups, selectedGroupIds);
+        userModal.style.display = 'block';
+    }
+
+    // -- Confirm Modal --
+    function openConfirmModal(title, body, onConfirm) {
+        document.getElementById('confirm-modal-title').textContent = title;
+        document.getElementById('confirm-modal-body').textContent = body;
+        confirmModal.style.display = 'block';
+        
+        const confirmBtn = document.getElementById('confirm-delete-btn');
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        newConfirmBtn.addEventListener('click', () => {
+            onConfirm();
+            closeAllModals();
+        });
+    }
+    
+    function closeAllModals() {
+        document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+    }
+
+    // -- Event Listeners --
+    
+    document.getElementById('add-root-group-btn').addEventListener('click', () => openGroupModal('Criar Grupo Raiz', { parent_id: null }));
+    
+    groupTree.addEventListener('click', e => {
+        const groupLi = e.target.closest('li[data-group-id]');
+        if (!groupLi) return;
+        
+        const groupId = parseInt(groupLi.dataset.groupId);
+
+        if (e.target.closest('.btn-add-subgroup')) {
+            e.stopPropagation();
+            openGroupModal('Criar Subgrupo', { parent_id: groupId });
+        } else if (e.target.closest('.btn-edit-group')) {
+            e.stopPropagation();
+            const groupName = groupLi.querySelector('.name-text').textContent;
+            openGroupModal('Renomear Grupo', { id: groupId, name: groupName });
+        } else if (e.target.closest('.btn-delete-group')) {
+            e.stopPropagation();
+            openConfirmModal('Excluir Grupo', 'Atenção: Todos os subgrupos e associações de usuários serão removidos. Deseja continuar?', async () => {
+                await api.deleteGroup(groupId);
+                loadAndRenderGroups();
+            });
+        } else if (e.target.closest('.group-node')) {
+            groupLi.classList.toggle('expanded');
+            selectGroup(groupId);
+        }
+    });
+
+    document.getElementById('save-group-btn').addEventListener('click', async () => {
+        const id = document.getElementById('group-id').value;
+        const parentId = document.getElementById('parent-group-id').value;
+        const name = document.getElementById('group-name-input').value;
+
+        if (!name) return alert('O nome do grupo é obrigatório.');
+
+        const result = id ? await api.updateGroup(id, name) : await api.createGroup(name, parentId ? parseInt(parentId) : null);
+        
+        if (result.status === 'success') {
+            closeAllModals();
+            await loadAndRenderGroups();
+        } else {
+            alert('Erro: ' + result.message);
+        }
+    });
+    
+    addUserBtn.addEventListener('click', () => openUserModal('Criar Novo Usuário'));
+
+    document.getElementById('save-user-btn').addEventListener('click', async () => {
+        const id = document.getElementById('user-id').value;
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        const selectedGroupIds = Array.from(document.querySelectorAll('#group-selection-container input:checked')).map(cb => parseInt(cb.value));
+
+        if(!username) return alert('O nome de usuário é obrigatório.');
+        if (!id && !password) return alert('A senha é obrigatória para novos usuários.');
+        if (selectedGroupIds.length === 0) return alert('Selecione ao menos um grupo.');
+        
+        const result = id 
+            ? await api.updateUser(id, username, password, selectedGroupIds)
+            : await api.createUser(username, password, selectedGroupIds);
+        
+        if (result.status === 'success'){
+            closeAllModals();
+            if(selectedGroupId) selectGroup(selectedGroupId); // Refresh user list if a group is selected
+        } else {
+            alert('Erro: ' + result.message);
+        }
+    });
+
+    usersTableBody.addEventListener('click', e => {
+        const userRow = e.target.closest('tr[data-user-id]');
+        if (!userRow) return;
+        const userId = parseInt(userRow.dataset.userId);
+        const username = userRow.querySelector('.username').textContent;
+
+        if (e.target.closest('.btn-edit-user')) {
+            e.preventDefault();
+            openUserModal('Editar Usuário', {id: userId, username: username});
+        }
+        else if (e.target.closest('.btn-suspend-user')) {
+             e.preventDefault();
+             api.toggleUserStatus(userId, 'suspend').then(() => selectedGroupId && selectGroup(selectedGroupId));
+        }
+        else if (e.target.closest('.btn-block-user')) {
+             e.preventDefault();
+             api.toggleUserStatus(userId, 'block').then(() => selectedGroupId && selectGroup(selectedGroupId));
+        }
+        else if (e.target.closest('.btn-delete-user')) {
+            e.preventDefault();
+            openConfirmModal('Excluir Usuário', 'Tem certeza que deseja excluir este usuário?', async () => {
+                await api.deleteUser(userId);
+                selectedGroupId && selectGroup(selectedGroupId);
+            });
+        }
+    });
+
+    document.querySelectorAll('.modal .close-btn').forEach(btn => btn.addEventListener('click', closeAllModals));
+    window.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) closeAllModals();
+    });
+
+    // Initial Load
+    loadAndRenderGroups();
+});
+</script>
+{% endblock %}

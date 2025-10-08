@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {{ 'Editar Notícia' if news_item else 'Publicar Nova Notícia' }}
+{% endblock %}
+
+{% block page_title %}
+    <i class="fas fa-newspaper mr-2"></i> {{ 'Editar Notícia' if news_item else 'Publicar Nova Notícia' }}
+{% endblock %}
+
+{% block body_class %}dashboard-page{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/post_editor.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="post-editor-container">
+    <form method="post" enctype="multipart/form-data">
+        <div class="post-editor-header">
+            <h3>Detalhes da Publicação</h3>
+        </div>
+
+        <div class="post-editor-body">
+            <div class="form-group">
+                <label for="title">Título</label>
+                <input type="text" id="title" name="title" class="form-control" value="{{ news_item.title if news_item else '' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="content">Conteúdo</label>
+                <textarea id="content" name="content" class="form-control">{{ news_item.content if news_item else '' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="image-upload-input">Imagem da Publicação</label>
+                <input type="file" id="image-upload-input" name="image" class="form-control" accept="image/*">
+            </div>
+
+            <div id="image-preview-container">
+                {% if news_item and news_item.image_url %}
+                    <img id="image-preview" src="{{ '/static/' + news_item.image_url }}" alt="Pré-visualização da imagem" style="display: block;">
+                    <span id="preview-placeholder" style="display: none;">Pré-visualização da Imagem</span>
+                {% else %}
+                    <img id="image-preview" src="" alt="Pré-visualização da imagem" style="display: none;">
+                    <span id="preview-placeholder" style="display: block;">Pré-visualização da Imagem</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="post-editor-footer">
+            <button type="submit" class="btn-publish">
+                <i class="fas fa-paper-plane mr-1"></i> {{ 'Atualizar' if news_item else 'Publicar' }}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/tinymce@5/tinymce.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    tinymce.init({
+        selector: '#content',
+        plugins: 'autolink lists link image charmap print preview hr anchor pagebreak nonbreaking table code help',
+        toolbar: 'undo redo | formatselect | bold italic forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+        menubar: false,
+        height: 300,
+        setup: function (editor) {
+            editor.on('init', function (e) {
+                // O conteúdo inicial já é renderizado pelo Jinja2
+            });
+        }
+    });
+
+    const imageUploadInput = document.getElementById('image-upload-input');
+    const imagePreview = document.getElementById('image-preview');
+    const previewPlaceholder = document.getElementById('preview-placeholder');
+
+    imageUploadInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+                previewPlaceholder.style.display = 'none';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.src = '';
+            imagePreview.style.display = 'none';
+            previewPlaceholder.style.display = 'block';
+        }
+    });
+});
+</script>
+{% endblock %}

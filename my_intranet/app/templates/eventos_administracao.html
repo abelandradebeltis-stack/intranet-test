@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Eventos - Administração de Publicações{% endblock %}
+
+{% block page_title %}Eventos - Administração de Publicações{% endblock %}
+
+{% block body_class %}dashboard-page{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <main class="main-panel">
+        <div class="main-header">
+            <h3>Todos os Eventos</h3>
+            <a href="{{ url_for('eventos.publicar') }}" id="add-publication-btn">
+                <i class="fas fa-plus"></i> Adicionar Evento
+            </a>
+        </div>
+        <div class="publications-body">
+            <table class="publications-table">
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Data do Evento</th>
+                        <th>Criador</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="publications-table-body">
+                    <!-- As linhas da tabela serão preenchidas via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tableBody = document.getElementById('publications-table-body');
+
+    function carregarEventos() {
+        fetch("{{ url_for('eventos.get_events_api') }}")
+            .then(response => response.json())
+            .then(data => {
+                tableBody.innerHTML = ''; // Limpa a tabela antes de preencher
+                if (data.events && data.events.length > 0) {
+                    data.events.forEach(event => {
+                        const row = document.createElement('tr');
+                        row.setAttribute('data-publication-id', event.id);
+                        row.innerHTML = `
+                            <td>${event.title}</td>
+                            <td>${new Date(event.event_date).toLocaleDateString()}</td>
+                            <td>${event.creator.username}</td>
+                            <td class="publication-actions">
+                                <a href="/eventos/editar/${event.id}" class="btn-edit-publication" title="Editar">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                <button class="btn-delete-publication" data-event-id="${event.id}" title="Excluir">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="4">Nenhum evento encontrado.</td></tr>';
+                }
+            });
+    }
+
+    tableBody.addEventListener('click', function(event) {
+        if (event.target.closest('.btn-delete-publication')) {
+            const eventId = event.target.closest('.btn-delete-publication').getAttribute('data-event-id');
+            if (confirm('Tem certeza que deseja excluir este evento?')) {
+                fetch(`/eventos/deletar/${eventId}`, {
+                    method: 'POST'
+                })
+                .then(response => {
+                    if(response.ok) {
+                        carregarEventos(); // Recarrega a lista após a exclusão
+                    }
+                });
+            }
+        }
+    });
+
+    carregarEventos(); // Carrega os eventos ao carregar a página
+});
+</script>
+{% endblock %}

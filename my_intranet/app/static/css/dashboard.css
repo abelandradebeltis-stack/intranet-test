@@ -1,0 +1,330 @@
+/* --- Estrutura Principal do Dashboard --- */
+.dashboard-page {
+    padding-top: 61px; /* Altura da top-bar + borda */
+}
+
+.dashboard-body {
+    display: flex;
+    height: calc(100vh - 61px); /* Altura total menos a top-bar */
+    position: relative;
+}
+
+.content {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto; /* Permite rolagem apenas no conteúdo principal */
+    background-color: var(--background-light);
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Barra Superior (Topo) --- */
+.top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 25px;
+    background-color: var(--background-white);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 1010;
+    box-sizing: border-box;
+}
+
+.top-bar-left { display: flex; align-items: center; gap: 15px; }
+.top-bar-right { display: flex; align-items: center; gap: 25px; }
+.top-bar h1 { font-size: 20px; margin: 0; }
+
+.menu-toggle { 
+    background: none; 
+    border: none; 
+    font-size: 20px; 
+    cursor: pointer; 
+    color: var(--text-color);
+    z-index: 1101; /* Garante que o botão fique acima da sidebar no mobile */
+}
+
+.top-bar-link { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    font-size: 16px; 
+    color: var(--text-color); 
+    text-decoration: none; 
+    transition: color 0.2s ease; 
+}
+.top-bar-link:hover { color: var(--primary-color); }
+
+/* --- Conteúdo do Dashboard (Cards) --- */
+.dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+.card-link { text-decoration: none; color: inherit; }
+
+/* --- Overlay para o menu mobile --- */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1098; /* Abaixo da sidebar, acima do conteúdo */
+}
+
+/* --- Barra Lateral (Sidebar) --- */
+.sidebar {
+    width: 250px; /* Largura padrão expandida */
+    height: 100%;
+    background-color: var(--secondary-color);
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; /* Impede que a sidebar encolha */
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-sizing: border-box;
+    overflow-y: auto;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+
+.sidebar-menu { list-style: none; margin: 0; padding: 0; }
+.sidebar-menu li { position: relative; }
+
+.sidebar-menu a {
+    color: var(--text-light);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    height: 50px;
+    padding: 0 24px; /* Espaçamento lateral (80-32)/2 = 24 */
+    font-size: 16px;
+    white-space: nowrap;
+    transition: background-color 0.2s ease;
+}
+
+.sidebar-menu a.active, .sidebar-menu a:hover { background-color: rgba(255,255,255,0.1); }
+
+.sidebar-menu a .fas {
+    font-size: 22px;
+    width: 32px; /* Largura fixa para o ícone */
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.menu-text { margin-left: 15px; }
+
+/* --- Sidebar Recolhida (Desktop) --- */
+.sidebar.is-collapsed {
+    width: 80px;
+}
+
+.sidebar.is-collapsed .menu-text,
+.sidebar.is-collapsed .submenu-arrow,
+.sidebar.is-collapsed .submenu-text {
+    display: none;
+}
+
+/* --- Estilos do Submenu --- */
+.submenu-toggle { cursor: pointer; width: 100%; position: relative; }
+.submenu-arrow { 
+    font-size: 12px; 
+    margin-left: auto; 
+    transition: transform 0.3s ease; 
+}
+
+.sidebar-submenu { 
+    list-style: none; 
+    padding: 0; 
+    margin: 0; 
+    background-color: rgba(0,0,0,0.15); 
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.has-submenu.is-open > .sidebar-submenu { max-height: 500px; }
+.has-submenu.is-open > .submenu-toggle .submenu-arrow { transform: rotate(180deg); }
+
+.sidebar-submenu a { height: 45px; padding-left: 71px; /* 24px + 32px + 15px */ }
+.submenu-text { font-size: 14px; }
+
+
+/* --- Styles for User Administration Page --- */
+.admin-forms {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+.create-user-form, .manage-groups {
+    background-color: var(--background-white);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.admin-forms h2 {
+    font-size: 20px;
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.admin-forms h3 {
+    font-size: 16px;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.form-group input[type="text"],
+.form-group input[type="password"],
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.form-group select[multiple] {
+    height: 120px;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.manage-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.group-list, .user-list {
+    background-color: var(--background-white);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.user-list h2, .group-list h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table th, table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+.status-active { color: #28a745; font-weight: bold; }
+.status-suspended { color: #ffc107; font-weight: bold; }
+.status-blocked { color: #dc3545; font-weight: bold; }
+
+.btn-action {
+    color: var(--primary-color);
+    text-decoration: none;
+    margin-right: 10px;
+    font-size: 14px;
+}
+
+.btn-delete {
+    color: #dc3545;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+}
+
+/* --- Modo Responsivo (Mobile) --- */
+@media (max-width: 767px) {
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 250px; /* Largura fixa no mobile */
+        z-index: 1099;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Estado "aberto" no mobile (controlado pela classe .is-open) */
+    .sidebar.is-open {
+        transform: translateX(0);
+    }
+
+    /* Quando a sidebar está aberta no mobile, o overlay aparece */
+    .sidebar.is-open + .sidebar-overlay {
+        display: block;
+    }
+
+    /* No mobile, o menu nunca está visualmente "recolhido", apenas escondido */
+    .sidebar.is-collapsed {
+        width: 250px; /* Mantém a largura ao recolher */
+    }
+
+    /* No mobile, sempre mostra o texto (quando visível) */
+    .sidebar.is-collapsed .menu-text,
+    .sidebar.is-collapsed .submenu-arrow {
+        display: inline;
+    }
+    
+    .sidebar-submenu a { padding-left: 71px; }
+}
+
+/* --- Responsive Styles for Admin Page --- */
+@media (max-width: 992px) {
+    .admin-forms {
+        grid-template-columns: 1fr;
+    }
+}
