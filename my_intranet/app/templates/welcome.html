@@ -7,94 +7,96 @@
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/welcome.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/carousel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cards_modal.css') }}">
 {% endblock %}
 
 {% block public_content %}
 <div class="welcome-container">
-    <!-- Cabeçalho com o nome da empresa e os botões -->
+    <!-- Cabeçalho -->
     <header class="welcome-header">
         <div class="container">
-            <img class="logo-img" src="../static/images/beltis_logo-Azul.png" alt="logo-beltis">
+            <img class="logo-img" src="{{ url_for('static', filename='images/beltis_logo-Azul.png') }}" alt="logo-beltis">
             <div class="header-links">
-                <a href="https://beltistecnologia.com.br/" target="_blank" class="header-link-btn site-btn">
-                    <i class="fas fa-globe"></i> Nosso Site
-                </a>
-                <a href="https://webmailpro.uol.com.br/" target="_blank" class="header-link-btn webmail-btn">
-                    <i class="fas fa-envelope"></i> Webmail
-                </a>
-                <a href="{{ url_for('main.login') }}" class="header-link-btn login-btn">
-                    <i class="fas fa-user"></i> Área do Funcionário
-                </a>
+                <a href="https://beltistecnologia.com.br/" target="_blank" class="header-link-btn site-btn"><i class="fas fa-globe"></i> Nosso Site</a>
+                <a href="https://webmailpro.uol.com.br/" target="_blank" class="header-link-btn webmail-btn"><i class="fas fa-envelope"></i> Webmail</a>
+                <a href="{{ url_for('main.login') }}" class="header-link-btn login-btn"><i class="fas fa-user"></i> Área do Funcionário</a>
             </div>
         </div>
     </header>
 
-    <!-- Seção principal de apresentação com carrossel -->
+    <!-- Carrossel -->
     <div class="hero carousel-container">
-        <div class="carousel-slide active">
-            <img src="{{ url_for('static', filename='images/welcomeBackground1.jpg') }}" alt="Background Image 1">
-        </div>
-        <div class="carousel-slide">
-            <img src="{{ url_for('static', filename='images/welcomeBackground2.jpg') }}" alt="Background Image 2">
-        </div>
+        <div class="carousel-slide active"><img src="{{ url_for('static', filename='images/welcomeBackground1.jpg') }}" alt="Background Image 1"></div>
+        <div class="carousel-slide"><img src="{{ url_for('static', filename='images/welcomeBackground2.jpg') }}" alt="Background Image 2"></div>
         <div class="container hero-text">
             <h2>Inovação e Excelência</h2>
             <p>Conectando equipes e impulsionando resultados. Conheça a nossa cultura e junte-se a nós.</p>
         </div>
     </div>
 
-    <!-- Conteúdo da página: Sobre, Notícias, Eventos -->
+    <!-- Conteúdo da página -->
     <main class="container page-content">
         <section id="about" class="welcome-section">
             <h3>Sobre Nós</h3>
             <p>Somos uma empresa líder em soluções inovadoras, comprometida com o sucesso dos nossos clientes e colaboradores. Nossa missão é transformar o mercado com tecnologia de ponta e um ambiente de trabalho colaborativo e inspirador.</p>
         </section>
 
+        <!-- Seção de Notícias -->
         <section id="news" class="welcome-section">
             <h3>Últimas Notícias</h3>
-            <div class="card-deck">
-                {% if news %}
-                    {% for item in news %}
-                        <div class="card">
-                            {% if item.image_url %}
-                                <img src="{{ url_for('static', filename=item.image_url) }}" alt="{{ item.title }}" class="card-img-top">
-                            {% endif %}
-                            <div class="card-body">
-                                <h4 class="card-title">{{ item.title }}</h4>
-                                <p class="card-text">{{ item.content | safe }}</p>
-                                <span class="card-date">{{ item.publication_date.strftime('%d de %B, %Y') }}</span>
-                            </div>
+            <div class="card-grid">
+                {% for item in news %}
+                    <div class="card" 
+                         data-modal-id="newsModal"
+                         data-title="{{ item.title }}" 
+                         data-image="{{ url_for('static', filename=item.image_url) if item.image_url else 'None' }}"
+                         data-date="Publicado em {{ item.publication_date.strftime('%d de %B, %Y') }}">
+                        
+                        {% if item.image_url %}
+                            <img src="{{ url_for('static', filename=item.image_url) }}" alt="{{ item.title }}" class="card-img-top">
+                        {% endif %}
+                        <div class="card-body">
+                            <h4 class="card-title">{{ item.title }}</h4>
+                            <p class="card-text">{{ item.content | striptags | safe }}</p>
+                            <div class="full-content">{{ item.content | safe }}</div>
                         </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="card">
-                        <p>Nenhuma notícia para exibir no momento.</p>
+                        <div class="card-footer">
+                            <span class="card-date">Publicado em {{ item.publication_date.strftime('%d de %B, %Y') }}</span>
+                        </div>
                     </div>
-                {% endif %}
+                {% else %}
+                    <p>Nenhuma notícia para exibir no momento.</p>
+                {% endfor %}
             </div>
         </section>
 
+        <!-- Seção de Eventos -->
         <section id="events" class="welcome-section">
             <h3>Próximos Eventos</h3>
-            <div class="card-deck">
-                {% if events %}
-                    {% for event in events %}
-                        <div class="card">
-                            {% if event.image_url %}
-                                <img src="{{ url_for('static', filename=event.image_url) }}" alt="{{ event.title }}" class="card-img-top">
-                            {% endif %}
-                            <div class="card-body">
-                                <h4 class="card-title">{{ event.title }}</h4>
-                                <p class="card-text">{{ event.description | safe }}</p>
-                                <span class="card-date">{{ event.event_date.strftime('%d de %B, %Y') }}</span>
-                            </div>
+            <div class="card-grid">
+                {% for event in events %}
+                    <div class="card"
+                         data-modal-id="eventModal"
+                         data-title="{{ event.title }}"
+                         data-image="{{ url_for('static', filename=event.image_url) if event.image_url else 'None' }}"
+                         data-date="Ocorre em: {{ event.event_date.strftime('%d de %B, %Y') }}">
+
+                        {% if event.image_url %}
+                            <img src="{{ url_for('static', filename=event.image_url) }}" alt="{{ event.title }}" class="card-img-top">
+                        {% endif %}
+                        <div class="card-body">
+                            <h4 class="card-title">{{ event.title }}</h4>
+                            <p class="card-text">{{ event.description | striptags | safe }}</p>
+                            <p class="card-publication-date">Publicado em {{ event.publication_date.strftime('%d de %B, %Y') }}</p>
+                            <div class="full-content">{{ event.description | safe }}</div>
                         </div>
-                    {% endfor %}
-                {% else %}
-                     <div class="card">
-                        <p>Nenhum evento programado.</p>
+                        <div class="card-footer">
+                           <span class="card-event-date-label">Ocorre em:</span> {{ event.event_date.strftime('%d de %B, %Y') }}
+                        </div>
                     </div>
-                {% endif %}
+                {% else %}
+                    <p>Nenhum evento programado.</p>
+                {% endfor %}
             </div>
         </section>
     </main>
@@ -105,7 +107,42 @@
     </footer>
 </div>
 
+<!-- Estruturas dos Modais (permanecem iguais) -->
+<div id="newsModal" class="modal">
+    <div class="modal-content">
+        <header class="modal-header">
+            <h3 class="modal-title"></h3>
+            <span class="close-button">&times;</span>
+        </header>
+        <div class="modal-body">
+            <img src="" alt="">
+            <div class="modal-text-content"></div>
+        </div>
+        <footer class="modal-footer">
+            <span class="modal-date"></span>
+        </footer>
+    </div>
+</div>
+
+<div id="eventModal" class="modal">
+    <div class="modal-content">
+        <header class="modal-header">
+            <h3 class="modal-title"></h3>
+            <span class="close-button">&times;</span>
+        </header>
+        <div class="modal-body">
+            <img src="" alt="">
+            <div class="modal-text-content"></div>
+        </div>
+        <footer class="modal-footer">
+            <span class="modal-date"></span>
+        </footer>
+    </div>
+</div>
+
+{% endblock public_content %}
+
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/carousel.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modals.js') }}"></script>
 {% endblock %}
-{% endblock public_content %}

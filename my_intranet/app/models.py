@@ -73,6 +73,7 @@ class Event(db.Model):
     description = db.Column(db.Text, nullable=False)
     image_url = db.Column(db.String(500), nullable=True)
     event_date = db.Column(db.Date, nullable=False)
+    publication_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     location = db.Column(db.String(200), nullable=True)
     creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
@@ -83,6 +84,7 @@ class Event(db.Model):
             'description': self.description,
             'image_url': self.image_url,
             'event_date': self.event_date.isoformat() if self.event_date else None,
+            'publication_date': self.publication_date.isoformat(),
             'location': self.location,
             'creator': self.creator.to_dict()
         }
