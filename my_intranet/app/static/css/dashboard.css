@@ -219,6 +219,7 @@
     cursor: pointer;
     font-size: 14px;
     transition: background-color 0.2s;
+    text-decoration: none;
 }
 
 .btn-primary:hover {
@@ -327,4 +328,124 @@ table tbody tr:hover {
     .admin-forms {
         grid-template-columns: 1fr;
     }
+}
+
+/* --- Tabs for Publications Admin --- */
+.tabs-container {
+    width: 100%;
+}
+
+.tab-headers {
+    display: flex;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+.tab-link {
+    padding: 10px 20px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color-light);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px; /* Aligns with the container's border */
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.tab-link:hover {
+    color: var(--primary-color);
+}
+
+.tab-link.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.5s;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* --- Publications Admin Page --- */
+.admin-container .main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.admin-container .main-header h3 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.publications-body {
+    background-color: var(--background-white);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    overflow: hidden; /* Ensures the child table respects the border radius */
+}
+
+.publications-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.publications-table th, 
+.publications-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.publications-table thead th {
+    background-color: #f8f9fa;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-color-light);
+}
+
+.publications-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.publications-table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+.publication-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.btn-edit-publication,
+.btn-delete-publication {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--text-color-light);
+    transition: color 0.2s ease;
+    padding: 5px;
+}
+
+.btn-edit-publication:hover {
+    color: var(--primary-color);
+}
+
+.btn-delete-publication:hover {
+    color: #dc3545;
 }

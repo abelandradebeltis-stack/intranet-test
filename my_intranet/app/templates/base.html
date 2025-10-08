@@ -31,32 +31,24 @@
         <nav class="sidebar" id="sidebar">
             <ul class="sidebar-menu">
                 <li><a href="{{ url_for('main.dashboard') }}" {% if request.endpoint == 'main.dashboard' %}class="active"{% endif %}><i class="fas fa-home"></i><span class="menu-text">Início</span></a></li>
-                <li class="has-submenu {% if request.endpoint.startswith('marketing.') %}is-open{% endif %}">
+                
+                {% if current_user.is_in_group('Marketing') or current_user.is_in_group('_acesso_total_') %}
+                <li class="has-submenu {% if request.endpoint in ['main.administracao_publicacoes', 'main.noticias_publicar', 'main.eventos_publicar'] %}is-open{% endif %}">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-lightbulb"></i>
                         <span class="menu-text">Marketing</span>
                         <i class="fas fa-chevron-down submenu-arrow"></i>
                     </a>
                     <ul class="sidebar-submenu">
-                        <li><a href="{{ url_for('marketing.administracao') }}" {% if request.endpoint == 'marketing.administracao' %}class="active"{% endif %}><span class="submenu-text">Administração</span></a></li>
-                        <li><a href="{{ url_for('marketing.publicar') }}" {% if request.endpoint == 'marketing.publicar' %}class="active"{% endif %}><span class="submenu-text">Publicações</span></a></li>
-                        <li><a href="#" {% if request.endpoint == 'main.marketing_campanhas' %}class="active"{% endif %}><span class="submenu-text">Campanhas</span></a></li>
-                        <li><a href="#" {% if request.endpoint == 'main.marketing_clientes' %}class="active"{% endif %}><span class="submenu-text">Clientes</span></a></li>
+                        <li><a href="{{ url_for('main.administracao_publicacoes') }}" {% if request.endpoint == 'main.administracao_publicacoes' %}class="active"{% endif %}><span class="submenu-text">Administração</span></a></li>
+                        <li><a href="{{ url_for('main.noticias_publicar') }}" {% if request.endpoint == 'main.noticias_publicar' %}class="active"{% endif %}><span class="submenu-text">Publicar Notícia</span></a></li>
+                        <li><a href="{{ url_for('main.eventos_publicar') }}" {% if request.endpoint == 'main.eventos_publicar' %}class="active"{% endif %}><span class="submenu-text">Publicar Evento</span></a></li>
                     </ul>
                 </li>
-                <li class="has-submenu {% if request.endpoint.startswith('eventos.') %}is-open{% endif %}">
-                    <a href="#" class="submenu-toggle">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span class="menu-text">Eventos</span>
-                        <i class="fas fa-chevron-down submenu-arrow"></i>
-                    </a>
-                    <ul class="sidebar-submenu">
-                        <li><a href="{{ url_for('eventos.administracao') }}" {% if request.endpoint == 'eventos.administracao' %}class="active"{% endif %}><span class="submenu-text">Administração</span></a></li>
-                        <li><a href="{{ url_for('eventos.publicar') }}" {% if request.endpoint == 'eventos.publicar' %}class="active"{% endif %}><span class="submenu-text">Publicações</span></a></li>
-                        <li><a href="#" {% if request.endpoint == 'main.eventos_agendamentos' %}class="active"{% endif %}><span class="submenu-text">Agendamentos</span></a></li>
-                    </ul>
-                </li>
-                <li class="has-submenu {% if request.endpoint.startswith('main.administracao') %}is-open{% endif %}">
+                {% endif %}
+
+                {% if current_user.is_in_group('Administração') or current_user.is_in_group('_acesso_total_') %}
+                <li class="has-submenu {% if request.endpoint in ['main.administracao', 'main.administracao_usuarios'] %}is-open{% endif %}">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-user-shield"></i>
                         <span class="menu-text">Administração</span>
@@ -67,6 +59,8 @@
                         <li><a href="{{ url_for('main.administracao_usuarios') }}" {% if request.endpoint == 'main.administracao_usuarios' %}class="active"{% endif %}><span class="submenu-text">Usuários</span></a></li>
                     </ul>
                 </li>
+                {% endif %}
+
                 <li class="has-submenu">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-laptop-code"></i>
@@ -145,7 +139,7 @@
                         <li><a href="#" {% if request.endpoint == 'main.financeiro_administracao' %}class="active"{% endif %}><span class="submenu-text">Administração</span></a></li>
                     </ul>
                 </li>
-                {% if current_user.is_in_group('TI') %}
+                {% if current_user.is_in_group('TI') or current_user.is_in_group('_acesso_total_') %}
                 <li class="has-submenu {% if request.endpoint.startswith('main.ti') %}is-open{% endif %}">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-desktop"></i>

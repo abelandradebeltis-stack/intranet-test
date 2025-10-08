@@ -52,13 +52,6 @@ def create_app():
     from .routes import main as main_blueprint
     app.register_blueprint(main_blueprint)
 
-    # Registra os novos blueprints
-    from .marketing_bp import marketing_bp
-    app.register_blueprint(marketing_bp)
-
-    from .eventos_bp import eventos_bp
-    app.register_blueprint(eventos_bp)
-
     # Adiciona o comando para criar admin
     @app.cli.command("create-admin")
     def create_admin_command():

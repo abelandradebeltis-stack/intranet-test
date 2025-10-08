@@ -85,6 +85,14 @@ def administracao():
 def administracao_usuarios():
     return render_template('admin_users.html')
 
+@main.route('/administracao/publicacoes')
+@login_required
+@group_required('Marketing')
+def administracao_publicacoes():
+    news_items = News.query.order_by(News.publication_date.desc()).all()
+    event_items = Event.query.order_by(Event.event_date.desc()).all()
+    return render_template('publicacoes_administracao.html', news_items=news_items, event_items=event_items)
+
 # --- API de Administração ---
 
 def serialize_group(group):
@@ -240,17 +248,8 @@ def toggle_user_status_api(user_id, status_type):
     db.session.commit()
     return jsonify(status='success', message=f'Status do usuário atualizado.', user=user.to_dict())
 
-# --- Rotas de Departamentos ---
-
 # --- Notícias ---
-@main.route('/marketing/administracao')
-@login_required
-@group_required('Marketing')
-def noticias_administracao():
-    news_items = News.query.order_by(News.publication_date.desc()).all()
-    return render_template('marketing_administracao.html', news_items=news_items)
-
-@main.route('/marketing/publicar', methods=['GET', 'POST'])
+@main.route('/marketing/noticias/publicar', methods=['GET', 'POST'])
 @login_required
 @group_required('Marketing')
 def noticias_publicar():
@@ -265,12 +264,12 @@ def noticias_publicar():
             db.session.add(new_news)
             db.session.commit()
             flash('Notícia publicada com sucesso!', 'success')
-            return redirect(url_for('main.noticias_administracao'))
+            return redirect(url_for('main.administracao_publicacoes'))
 
     return render_template('marketing_publicacoes.html')
 
 
-@main.route('/marketing/editar/<int:news_id>', methods=['GET', 'POST'])
+@main.route('/marketing/noticias/editar/<int:news_id>', methods=['GET', 'POST'])
 @login_required
 @group_required('Marketing')
 def noticias_editar(news_id):
@@ -286,12 +285,12 @@ def noticias_editar(news_id):
 
         db.session.commit()
         flash('Notícia atualizada com sucesso!', 'success')
-        return redirect(url_for('main.noticias_administracao'))
+        return redirect(url_for('main.administracao_publicacoes'))
 
     return render_template('marketing_publicacoes.html', news_item=news_item)
 
 
-@main.route('/marketing/deletar/<int:news_id>', methods=['POST'])
+@main.route('/marketing/noticias/deletar/<int:news_id>', methods=['POST'])
 @login_required
 @group_required('Marketing')
 def noticias_deletar(news_id):
@@ -299,19 +298,12 @@ def noticias_deletar(news_id):
     db.session.delete(news_item)
     db.session.commit()
     flash('Notícia deletada com sucesso!', 'success')
-    return redirect(url_for('main.noticias_administracao'))
+    return redirect(url_for('main.administracao_publicacoes'))
 
 # --- Eventos ---
-@main.route('/eventos/administracao')
+@main.route('/marketing/eventos/publicar', methods=['GET', 'POST'])
 @login_required
-@group_required('Eventos', 'Marketing')
-def eventos_administracao():
-    event_items = Event.query.order_by(Event.event_date.asc()).all()
-    return render_template('eventos_administracao.html', event_items=event_items)
-
-@main.route('/eventos/publicar', methods=['GET', 'POST'])
-@login_required
-@group_required('Eventos', 'Marketing')
+@group_required('Marketing')
 def eventos_publicar():
     if request.method == 'POST':
         title = request.form['title']
@@ -326,14 +318,14 @@ def eventos_publicar():
             db.session.add(new_event)
             db.session.commit()
             flash('Evento publicado com sucesso!', 'success')
-            return redirect(url_for('main.eventos_administracao'))
+            return redirect(url_for('main.administracao_publicacoes'))
 
     return render_template('eventos_publicacoes.html')
 
 
-@main.route('/eventos/editar/<int:event_id>', methods=['GET', 'POST'])
+@main.route('/marketing/eventos/editar/<int:event_id>', methods=['GET', 'POST'])
 @login_required
-@group_required('Eventos', 'Marketing')
+@group_required('Marketing')
 def eventos_editar(event_id):
     event_item = Event.query.get_or_404(event_id)
     if request.method == 'POST':
@@ -349,17 +341,17 @@ def eventos_editar(event_id):
 
         db.session.commit()
         flash('Evento atualizado com sucesso!', 'success')
-        return redirect(url_for('main.eventos_administracao'))
+        return redirect(url_for('main.administracao_publicacoes'))
 
     return render_template('eventos_publicacoes.html', event_item=event_item)
 
 
-@main.route('/eventos/deletar/<int:event_id>', methods=['POST'])
+@main.route('/marketing/eventos/deletar/<int:event_id>', methods=['POST'])
 @login_required
-@group_required('Eventos', 'Marketing')
+@group_required('Marketing')
 def eventos_deletar(event_id):
     event_item = Event.query.get_or_404(event_id)
     db.session.delete(event_item)
     db.session.commit()
     flash('Evento deletado com sucesso!', 'success')
-    return redirect(url_for('main.eventos_administracao'))
+    return redirect(url_for('main.administracao_publicacoes'))

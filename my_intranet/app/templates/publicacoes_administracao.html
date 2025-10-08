@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Administração de Publicações{% endblock %}
+
+{% block page_title %}Administração de Publicações{% endblock %}
+
+{% block body_class %}dashboard-page{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="tabs-container">
+        <div class="tab-headers">
+            <button class="tab-link active" data-tab="tab-noticias">Notícias</button>
+            <button class="tab-link" data-tab="tab-eventos">Eventos</button>
+        </div>
+
+        <div id="tab-noticias" class="tab-content active">
+            <div class="main-header">
+                <h3>Gerenciar Notícias</h3>
+                <a href="{{ url_for('main.noticias_publicar') }}" class="btn-primary">
+                    <i class="fas fa-plus"></i> Adicionar Nova Notícia
+                </a>
+            </div>
+            <div class="publications-body">
+                <table class="publications-table">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Data de Publicação</th>
+                            <th>Autor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for news in news_items %}
+                        <tr>
+                            <td>{{ news.title }}</td>
+                            <td>{{ news.publication_date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ news.author.username }}</td>
+                            <td class="publication-actions">
+                                <a href="{{ url_for('main.noticias_editar', news_id=news.id) }}" class="btn-edit-publication" title="Editar">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                <form action="{{ url_for('main.noticias_deletar', news_id=news.id) }}" method="POST" style="display:inline;">
+                                    <button type="submit" class="btn-delete-publication" title="Excluir" onclick="return confirm('Tem certeza que deseja excluir esta notícia?');">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4">Nenhuma notícia encontrada.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-eventos" class="tab-content">
+            <div class="main-header">
+                <h3>Gerenciar Eventos</h3>
+                <a href="{{ url_for('main.eventos_publicar') }}" class="btn-primary">
+                    <i class="fas fa-plus"></i> Adicionar Novo Evento
+                </a>
+            </div>
+            <div class="publications-body">
+                <table class="publications-table">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Data do Evento</th>
+                            <th>Data de Publicação</th>
+                            <th>Criador</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in event_items %}
+                        <tr>
+                            <td>{{ event.title }}</td>
+                            <td>{{ event.event_date.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>{{ event.publication_date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ event.creator.username }}</td>
+                            <td class="publication-actions">
+                                <a href="{{ url_for('main.eventos_editar', event_id=event.id) }}" class="btn-edit-publication" title="Editar">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                <form action="{{ url_for('main.eventos_deletar', event_id=event.id) }}" method="POST" style="display:inline;">
+                                    <button type="submit" class="btn-delete-publication" title="Excluir" onclick="return confirm('Tem certeza que deseja excluir este evento?');">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5">Nenhum evento encontrado.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.tab-link');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const target = document.getElementById(tab.dataset.tab);
+
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            tabContents.forEach(c => c.classList.remove('active'));
+            target.classList.add('active');
+        });
+    });
+});
+</script>
+{% endblock %}
