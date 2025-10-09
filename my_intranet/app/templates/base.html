@@ -30,9 +30,12 @@
     <div class="dashboard-body">
         <nav class="sidebar" id="sidebar">
             <ul class="sidebar-menu">
+                <!-- O grupo 'Inicio' é padrão para todos os usuários -->
+                {% if 'Inicio' in user_groups or '_acesso_total_' in user_groups %}
                 <li><a href="{{ url_for('main.dashboard') }}" {% if request.endpoint == 'main.dashboard' %}class="active"{% endif %}><i class="fas fa-home"></i><span class="menu-text">Início</span></a></li>
+                {% endif %}
                 
-                {% if current_user.is_in_group('Marketing') or current_user.is_in_group('_acesso_total_') %}
+                {% if 'Marketing - Administração' in user_groups or 'Marketing - Publicar Notícia' in user_groups or 'Marketing - Publicar Evento' in user_groups or 'Marketing' in user_groups or '_acesso_total_' in user_groups %}
                 <li class="has-submenu {% if request.endpoint in ['main.administracao_publicacoes', 'main.noticias_publicar', 'main.eventos_publicar'] %}is-open{% endif %}">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-lightbulb"></i>
@@ -40,14 +43,20 @@
                         <i class="fas fa-chevron-down submenu-arrow"></i>
                     </a>
                     <ul class="sidebar-submenu">
+                        {% if 'Marketing - Administração' in user_groups or 'Marketing' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="{{ url_for('main.administracao_publicacoes') }}" {% if request.endpoint == 'main.administracao_publicacoes' %}class="active"{% endif %}><span class="submenu-text">Administração</span></a></li>
+                        {% endif %}
+                        {% if 'Marketing - Publicar Notícia' in user_groups or 'Marketing' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="{{ url_for('main.noticias_publicar') }}" {% if request.endpoint == 'main.noticias_publicar' %}class="active"{% endif %}><span class="submenu-text">Publicar Notícia</span></a></li>
+                        {% endif %}
+                        {% if 'Marketing - Publicar Evento' in user_groups or 'Marketing' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="{{ url_for('main.eventos_publicar') }}" {% if request.endpoint == 'main.eventos_publicar' %}class="active"{% endif %}><span class="submenu-text">Publicar Evento</span></a></li>
+                        {% endif %}
                     </ul>
                 </li>
                 {% endif %}
 
-                {% if current_user.is_in_group('Administração') or current_user.is_in_group('_acesso_total_') %}
+                {% if 'Administração - Painel' in user_groups or 'Administração - Usuários' in user_groups or 'Administração' in user_groups or '_acesso_total_' in user_groups %}
                 <li class="has-submenu {% if request.endpoint in ['main.administracao', 'main.administracao_usuarios'] %}is-open{% endif %}">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-user-shield"></i>
@@ -55,12 +64,17 @@
                         <i class="fas fa-chevron-down submenu-arrow"></i>
                     </a>
                     <ul class="sidebar-submenu">
+                        {% if 'Administração - Painel' in user_groups or 'Administração' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="{{ url_for('main.administracao') }}" {% if request.endpoint == 'main.administracao' %}class="active"{% endif %}><span class="submenu-text">Painel</span></a></li>
+                        {% endif %}
+                        {% if 'Administração - Usuários' in user_groups or 'Administração' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="{{ url_for('main.administracao_usuarios') }}" {% if request.endpoint == 'main.administracao_usuarios' %}class="active"{% endif %}><span class="submenu-text">Usuários</span></a></li>
+                        {% endif %}
                     </ul>
                 </li>
                 {% endif %}
 
+                {% if 'Sistemas - Suporte' in user_groups or 'Sistemas - Inventário' in user_groups or 'Sistemas - Ferramentas' in user_groups or 'Sistemas - Webmail' in user_groups or 'Sistemas' in user_groups or '_acesso_total_' in user_groups %}
                 <li class="has-submenu">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-laptop-code"></i>
@@ -68,12 +82,23 @@
                         <i class="fas fa-chevron-down submenu-arrow"></i>
                     </a>
                     <ul class="sidebar-submenu">
+                        {% if 'Sistemas - Suporte' in user_groups or 'Sistemas' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#"><span class="submenu-text">Suporte</span></a></li>
+                        {% endif %}
+                        {% if 'Sistemas - Inventário' in user_groups or 'Sistemas' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#"><span class="submenu-text">Inventário</span></a></li>
+                        {% endif %}
+                        {% if 'Sistemas - Ferramentas' in user_groups or 'Sistemas' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#"><span class="submenu-text">Ferramentas</span></a></li>
+                        {% endif %}
+                        {% if 'Sistemas - Webmail' in user_groups or 'Sistemas' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="https://webmailpro.uol.com.br/"  target="_blank" ><span class="submenu-text">Webmail</span></a></li>
+                        {% endif %}
                     </ul>
                 </li>
+                {% endif %}
+
+                {% if 'Contato - Ramais' in user_groups or 'Contato - E-mails' in user_groups or 'Contato - Discord' in user_groups or 'Contato - Whatsapp' in user_groups or 'Contato' in user_groups or '_acesso_total_' in user_groups %}
                 <li class="has-submenu {% if request.endpoint.startswith('main.ramais') %}is-open{% endif %}">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-address-book"></i>
@@ -81,12 +106,23 @@
                         <i class="fas fa-chevron-down submenu-arrow"></i>
                     </a>
                     <ul class="sidebar-submenu">
+                        {% if 'Contato - Ramais' in user_groups or 'Contato' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="{{ url_for('main.ramais') }}" {% if request.endpoint == 'main.ramais' %}class="active"{% endif %}><span class="submenu-text">Ramais</span></a></li>
+                        {% endif %}
+                        {% if 'Contato - E-mails' in user_groups or 'Contato' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#"><span class="submenu-text">E-mails</span></a></li>
+                        {% endif %}
+                        {% if 'Contato - Discord' in user_groups or 'Contato' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#"><span class="submenu-text">Discord</span></a></li>
+                        {% endif %}
+                        {% if 'Contato - Whatsapp' in user_groups or 'Contato' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#"><span class="submenu-text">Whatsapp</span></a></li>
+                        {% endif %}
                     </ul>
                 </li>
+                {% endif %}
+
+                {% if 'Administrativo - Nossos Clientes' in user_groups or 'Administrativo - Gerencia' in user_groups or 'Administrativo - Diretoria' in user_groups or 'Administrativo' in user_groups or '_acesso_total_' in user_groups %}
                 <li class="has-submenu {% if request.endpoint.startswith('main.administrativo') %}is-open{% endif %}">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-briefcase"></i>
@@ -94,11 +130,20 @@
                         <i class="fas fa-chevron-down submenu-arrow"></i>
                     </a>
                     <ul class="sidebar-submenu">
+                        {% if 'Administrativo - Nossos Clientes' in user_groups or 'Administrativo' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.administrativo_clientes' %}class="active"{% endif %}><span class="submenu-text">Nossos Clientes</span></a></li>
+                        {% endif %}
+                        {% if 'Administrativo - Gerencia' in user_groups or 'Administrativo' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.administrativo_gerencia' %}class="active"{% endif %}><span class="submenu-text">Gerencia</span></a></li>
+                        {% endif %}
+                        {% if 'Administrativo - Diretoria' in user_groups or 'Administrativo' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.administrativo_diretoria' %}class="active"{% endif %}><span class="submenu-text">Diretoria</span></a></li>
+                        {% endif %}
                     </ul>
                 </li>
+                {% endif %}
+
+                {% if 'Recursos Humanos - Recrutamento' in user_groups or 'Recursos Humanos - Benefícios' in user_groups or 'Recursos Humanos - Folha de Pagamento' in user_groups or 'Recursos Humanos - Avaliações de Desempenho' in user_groups or 'Recursos Humanos - Administração' in user_groups or 'Recursos Humanos' in user_groups or '_acesso_total_' in user_groups %}
                 <li class="has-submenu {% if request.endpoint.startswith('main.rh') %}is-open{% endif %}">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-id-badge"></i>
@@ -106,13 +151,26 @@
                         <i class="fas fa-chevron-down submenu-arrow"></i>
                     </a>
                     <ul class="sidebar-submenu">
+                        {% if 'Recursos Humanos - Recrutamento' in user_groups or 'Recursos Humanos' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.rh_recrutamento' %}class="active"{% endif %}><span class="submenu-text">Recrutamento</span></a></li>
+                        {% endif %}
+                        {% if 'Recursos Humanos - Benefícios' in user_groups or 'Recursos Humanos' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.rh_beneficios' %}class="active"{% endif %}><span class="submenu-text">Benefícios</span></a></li>
+                        {% endif %}
+                        {% if 'Recursos Humanos - Folha de Pagamento' in user_groups or 'Recursos Humanos' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.rh_folha_de_pagamento' %}class="active"{% endif %}><span class="submenu-text">Folha de Pagamento</span></a></li>
+                        {% endif %}
+                        {% if 'Recursos Humanos - Avaliações de Desempenho' in user_groups or 'Recursos Humanos' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.rh_avaliacoes' %}class="active"{% endif %}><span class="submenu-text">Avaliações de Desempenho</span></a></li>
+                        {% endif %}
+                        {% if 'Recursos Humanos - Administração' in user_groups or 'Recursos Humanos' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.rh_administracao' %}class="active"{% endif %}><span class="submenu-text">Administração</span></a></li>
+                        {% endif %}
                     </ul>
                 </li>
+                {% endif %}
+
+                {% if 'RH Externo - Portal RH' in user_groups or 'RH Externo - Férias' in user_groups or 'RH Externo - Holerites' in user_groups or 'RH Externo' in user_groups or '_acesso_total_' in user_groups %}
                 <li class="has-submenu">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-id-badge"></i>
@@ -120,11 +178,20 @@
                         <i class="fas fa-chevron-down submenu-arrow"></i>
                     </a>
                     <ul class="sidebar-submenu">
+                        {% if 'RH Externo - Portal RH' in user_groups or 'RH Externo' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="http://backoffice.beltis.com.br/Login?ReturnUrl=%2F" target="_blank"><span class="submenu-text">Portal RH</span></a></li>
+                        {% endif %}
+                        {% if 'RH Externo - Férias' in user_groups or 'RH Externo' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="http://backoffice.beltis.com.br/CustomerPortal/AssignDocument/Vacation" target="_blank"><span class="submenu-text">Férias</span></a></li>
+                        {% endif %}
+                        {% if 'RH Externo - Holerites' in user_groups or 'RH Externo' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="http://backoffice.beltis.com.br/CustomerPortal/AssignDocument/Payment" target="_blank"><span class="submenu-text">Holerites</span></a></li>
+                        {% endif %}
                     </ul>
                 </li>
+                {% endif %}
+
+                {% if 'Financeiro - Contas a pagar' in user_groups or 'Financeiro - Contas a receber' in user_groups or 'Financeiro - Operações' in user_groups or 'Financeiro - Relatórios' in user_groups or 'Financeiro - Administração' in user_groups or 'Financeiro' in user_groups or '_acesso_total_' in user_groups %}
                 <li class="has-submenu {% if request.endpoint.startswith('main.financeiro') %}is-open{% endif %}">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-dollar-sign"></i>
@@ -132,14 +199,26 @@
                         <i class="fas fa-chevron-down submenu-arrow"></i>
                     </a>
                     <ul class="sidebar-submenu">
+                        {% if 'Financeiro - Contas a pagar' in user_groups or 'Financeiro' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.financeiro_contas_a_pagar' %}class="active"{% endif %}><span class="submenu-text">Contas a pagar</span></a></li>
+                        {% endif %}
+                        {% if 'Financeiro - Contas a receber' in user_groups or 'Financeiro' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.financeiro_contas_a_receber' %}class="active"{% endif %}><span class="submenu-text">Contas a receber</span></a></li>
+                        {% endif %}
+                        {% if 'Financeiro - Operações' in user_groups or 'Financeiro' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.financeiro_operacoes' %}class="active"{% endif %}><span class="submenu-text">Operações</span></a></li>
+                        {% endif %}
+                        {% if 'Financeiro - Relatórios' in user_groups or 'Financeiro' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.financeiro_relatorios' %}class="active"{% endif %}><span class="submenu-text">Relatórios</span></a></li>
+                        {% endif %}
+                        {% if 'Financeiro - Administração' in user_groups or 'Financeiro' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.financeiro_administracao' %}class="active"{% endif %}><span class="submenu-text">Administração</span></a></li>
+                        {% endif %}
                     </ul>
                 </li>
-                {% if current_user.is_in_group('TI') or current_user.is_in_group('_acesso_total_') %}
+                {% endif %}
+
+                {% if 'TI - Administração' in user_groups or 'TI - Chamados' in user_groups or 'TI - Infraestrutura' in user_groups or 'TI - Relatórios' in user_groups or 'TI - Segurança' in user_groups or 'TI' in user_groups or '_acesso_total_' in user_groups %}
                 <li class="has-submenu {% if request.endpoint.startswith('main.ti') %}is-open{% endif %}">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-desktop"></i>
@@ -147,11 +226,21 @@
                         <i class="fas fa-chevron-down submenu-arrow"></i>
                     </a>
                     <ul class="sidebar-submenu">
+                        {% if 'TI - Administração' in user_groups or 'TI' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.ti_administracao' %}class="active"{% endif %}><span class="submenu-text">Administração</span></a></li>
+                        {% endif %}
+                        {% if 'TI - Chamados' in user_groups or 'TI' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.ti_chamados' %}class="active"{% endif %}><span class="submenu-text">Chamados</span></a></li>
+                        {% endif %}
+                        {% if 'TI - Infraestrutura' in user_groups or 'TI' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.ti_infraestrutura' %}class="active"{% endif %}><span class="submenu-text">Infraestrutura</span></a></li>
+                        {% endif %}
+                        {% if 'TI - Relatórios' in user_groups or 'TI' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.ti_relatorios' %}class="active"{% endif %}><span class="submenu-text">Relatórios</span></a></li>
+                        {% endif %}
+                        {% if 'TI - Segurança' in user_groups or 'TI' in user_groups or '_acesso_total_' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.ti_seguranca' %}class="active"{% endif %}><span class="submenu-text">Segurança</span></a></li>
+                        {% endif %}
                     </ul>
                 </li>
                 {% endif %}
