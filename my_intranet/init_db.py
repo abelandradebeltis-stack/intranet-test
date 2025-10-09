@@ -19,7 +19,7 @@ if project_root not in sys.path:
 
 # Agora que o caminho está correto, usamos importações absolutas a partir da raiz do projeto.
 from my_intranet.app import create_app, db
-from my_intranet.app.models import User, Group
+from my_intranet.app.models import User, Group, AccessRequest
 
 # Cria uma instância da aplicação Flask
 app = create_app()
@@ -36,31 +36,37 @@ with app.app_context():
     acesso_total = Group(name='_acesso_total_')
     
     # Grupos de Departamentos Principais (Raiz)
-    administrativo = Group(name='Administrativo')
+    administrativo = Group(name='Administração')
     financeiro = Group(name='Financeiro')
     rh = Group(name='Recursos Humanos')
     ti = Group(name='TI')
     marketing = Group(name='Marketing')
-    eventos = Group(name='Eventos')
-    sistemas = Group(name='Sistemas')  # Adicionado para corresponder ao menu
+    sistemas = Group(name='Sistemas')
 
-    # Grupos que serão padrão para novos usuários
+    # Grupos que serão padrão para novos usuários (também principais)
     inicio = Group(name='Inicio')
     contato = Group(name='Contato')
     rh_externo = Group(name='RH Externo')
 
     db.session.add_all([
-        acesso_total, administrativo, financeiro, rh, ti, marketing, eventos, sistemas,
+        acesso_total, administrativo, financeiro, rh, ti, marketing, sistemas,
         inicio, contato, rh_externo
     ])
     db.session.commit()
 
-    # Criando subgrupos (exemplo)
-    adm_gerencia = Group(name='Gerência', parent_id=administrativo.id)
-    adm_diretoria = Group(name='Diretoria', parent_id=administrativo.id)
-    adm_clientes = Group(name='Clientes', parent_id=administrativo.id)
+    # Criando subgrupos para controle de acesso mais fino
+    adm_painel = Group(name='Administração - Painel', parent_id=administrativo.id)
+    adm_usuarios = Group(name='Administração - Usuários', parent_id=administrativo.id)
+    adm_solicitacoes = Group(name='Administração - Solicitações', parent_id=administrativo.id)
     
-    db.session.add_all([adm_gerencia, adm_diretoria, adm_clientes])
+    mkt_admin = Group(name='Marketing - Administração', parent_id=marketing.id)
+    mkt_noticia = Group(name='Marketing - Publicar Notícia', parent_id=marketing.id)
+    mkt_evento = Group(name='Marketing - Publicar Evento', parent_id=marketing.id)
+
+    db.session.add_all([
+        adm_painel, adm_usuarios, adm_solicitacoes,
+        mkt_admin, mkt_noticia, mkt_evento
+    ])
     db.session.commit()
     
     print("Grupos e subgrupos criados.")
@@ -72,13 +78,15 @@ with app.app_context():
         admin_user = User(username='admin')
         admin_user.set_password('admin')
         db.session.add(admin_user)
+        db.session.commit() # Commit para que o usuário tenha um ID
     
-    # Adiciona o admin ao grupo de acesso total
-    acesso_total_group = Group.query.filter_by(name='_acesso_total_').first()
-    if acesso_total_group and acesso_total_group not in admin_user.groups:
-        admin_user.groups.append(acesso_total_group)
+    # Busca TODOS os grupos existentes no banco de dados
+    all_groups = Group.query.all()
+    
+    # Garante que o admin seja membro de todos os grupos
+    admin_user.groups = list(set(all_groups))
     
     db.session.commit()
 
-    print("Usuário administrador configurado com acesso total.")
+    print("Usuário administrador configurado com acesso a TODOS os grupos.")
     print("Banco de dados inicializado com sucesso!")

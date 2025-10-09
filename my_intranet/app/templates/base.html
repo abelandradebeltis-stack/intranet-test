@@ -57,7 +57,7 @@
                 {% endif %}
 
                 {% if '_acesso_total_' in user_groups or 'Administração' in user_groups %}
-                <li class="has-submenu {% if request.endpoint in ['main.administracao', 'main.administracao_usuarios'] %}is-open{% endif %}">
+                <li class="has-submenu {% if request.endpoint in ['main.administracao', 'main.administracao_usuarios', 'main.administracao_solicitacoes'] %}is-open{% endif %}">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-user-shield"></i>
                         <span class="menu-text">Administração</span>
@@ -70,18 +70,26 @@
                         {% if '_acesso_total_' in user_groups or 'Administração - Usuários' in user_groups or 'Administração' in user_groups %}
                         <li><a href="{{ url_for('main.administracao_usuarios') }}" {% if request.endpoint == 'main.administracao_usuarios' %}class="active"{% endif %}><span class="submenu-text">Usuários</span></a></li>
                         {% endif %}
+                        {% if '_acesso_total_' in user_groups or 'Administração - Solicitações' in user_groups or 'Administração' in user_groups %}
+                        <li><a href="{{ url_for('main.administracao_solicitacoes') }}" {% if request.endpoint == 'main.administracao_solicitacoes' %}class="active"{% endif %}><span class="submenu-text">Solicitações</span></a></li>
+                        {% endif %}
                     </ul>
                 </li>
                 {% endif %}
 
-                {% if 'Sistemas - Suporte' in user_groups or 'Sistemas - Inventário' in user_groups or 'Sistemas - Ferramentas' in user_groups or 'Sistemas - Webmail' in user_groups or 'Sistemas' in user_groups %}
-                <li class="has-submenu">
+                {% if 'Sistemas' in user_groups or 'Sistemas - Suporte' in user_groups or 'Sistemas - Inventário' in user_groups or 'Sistemas - Ferramentas' in user_groups or 'Sistemas - Webmail' in user_groups %}
+                <li class="has-submenu {% if request.endpoint in ['main.sistemas_geral', 'main.sistemas_acessos', 'main.sistemas_solicitacoes'] %}is-open{% endif %}">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-laptop-code"></i>
                         <span class="menu-text">Sistemas</span>
                         <i class="fas fa-chevron-down submenu-arrow"></i>
                     </a>
                     <ul class="sidebar-submenu">
+                        {% if 'Sistemas' in user_groups %}
+                        <li><a href="{{ url_for('main.sistemas_geral') }}" {% if request.endpoint == 'main.sistemas_geral' %}class="active"{% endif %}><span class="submenu-text">Visão Geral</span></a></li>
+                        <li><a href="{{ url_for('main.sistemas_acessos') }}" {% if request.endpoint == 'main.sistemas_acessos' %}class="active"{% endif %}><span class="submenu-text">Meus Acessos</span></a></li>
+                        <li><a href="{{ url_for('main.sistemas_solicitacoes') }}" {% if request.endpoint == 'main.sistemas_solicitacoes' %}class="active"{% endif %}><span class="submenu-text">Solicitar Acesso</span></a></li>
+                        {% endif %}
                         {% if 'Sistemas - Suporte' in user_groups or 'Sistemas' in user_groups %}
                         <li><a href="#"><span class="submenu-text">Suporte</span></a></li>
                         {% endif %}
@@ -272,6 +280,8 @@
         {% endblock %}
     {% endif %}
 
+    <div id="toast-container"></div>
+
     {% block scripts %}
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -332,7 +342,115 @@
                 });
             }
         });
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+            
+            toast.innerHTML = `
+                <div class="toast-icon"><i class="fas ${iconClass}"></i></div>
+                <div class="toast-message">${message}</div>
+                <div class="toast-progress"></div>
+            `;
+            
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 100);
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    container.removeChild(toast);
+                }, 500);
+            }, 5000);
+        }
     </script>
     {% endblock %}
 </body>
 </html>
+<style>
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.toast {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    width: 100%;
+    max-width: 350px;
+    opacity: 0;
+    transform: translateX(110%);
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    overflow: hidden;
+    position: relative;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-icon {
+    font-size: 24px;
+    margin-right: 15px;
+}
+
+.toast-message {
+    flex-grow: 1;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+.toast-success .toast-icon {
+    color: #28a745;
+}
+.toast-error .toast-icon {
+    color: #dc3545;
+}
+
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    width: 100%;
+    background-color: rgba(0,0,0,0.1);
+}
+
+.toast.show .toast-progress::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    animation: progress-bar 4.5s linear forwards;
+}
+.toast-success .toast-progress::before {
+    background-color: #28a745;
+}
+.toast-error .toast-progress::before {
+    background-color: #dc3545;
+}
+
+@keyframes progress-bar {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+</style>

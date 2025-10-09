@@ -2,7 +2,7 @@
 import os
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, current_app
 from flask_login import login_user, logout_user, login_required, current_user
-from .models import User, Group, News, Event
+from .models import User, Group, News, Event, AccessRequest
 from . import db
 from .decorators import group_required
 from datetime import datetime
@@ -78,12 +78,54 @@ def logout():
 @main.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('index.html', user=current_user.username)
+    # Para administradores, buscar as 5 últimas solicitações pendentes
+    if 'Administração' in {group.name for group in current_user.groups}:
+        pending_requests = AccessRequest.query.filter_by(status='Pendente').order_by(AccessRequest.requested_at.desc()).limit(5).all()
+    else:
+        pending_requests = []
+    return render_template('index.html', user=current_user.username, pending_requests=pending_requests)
 
 @main.route('/ramais')
 @login_required
 def ramais():
     return render_template('ramais.html')
+
+# --- Rotas de Sistemas ---
+@main.route('/sistemas')
+@login_required
+def sistemas_geral():
+    return render_template('sistemas_geral.html')
+
+@main.route('/sistemas/acessos')
+@login_required
+def sistemas_acessos():
+    requests = AccessRequest.query.filter_by(user_id=current_user.id).order_by(AccessRequest.requested_at.desc()).all()
+    return render_template('sistemas_acessos.html', requests=requests)
+
+@main.route('/sistemas/solicitacoes', methods=['GET', 'POST'])
+@login_required
+def sistemas_solicitacoes():
+    if request.method == 'POST':
+        sistema = request.form.get('sistema')
+        justificativa = request.form.get('justificativa')
+
+        if not sistema or not justificativa:
+            flash('Por favor, preencha todos os campos do formulário.', 'error')
+            return redirect(url_for('main.sistemas_solicitacoes'))
+
+        new_request = AccessRequest(
+            user_id=current_user.id,
+            sistema=sistema,
+            justificativa=justificativa
+        )
+        db.session.add(new_request)
+        db.session.commit()
+
+        flash('Sua solicitação de acesso foi enviada com sucesso! Você pode acompanhar o status em "Meus Acessos".', 'success')
+        return redirect(url_for('main.sistemas_solicitacoes'))
+        
+    return render_template('sistemas_solicitacoes.html')
+
 
 # --- Rotas de Administração ---
 
@@ -106,6 +148,32 @@ def administracao_publicacoes():
     news_items = News.query.order_by(News.publication_date.desc()).all()
     event_items = Event.query.order_by(Event.event_date.desc()).all()
     return render_template('publicacoes_administracao.html', news_items=news_items, event_items=event_items)
+
+@main.route('/administracao/solicitacoes')
+@login_required
+@group_required('Administração')
+def administracao_solicitacoes():
+    page = request.args.get('page', 1, type=int)
+    requests = AccessRequest.query.order_by(AccessRequest.requested_at.desc()).paginate(page=page, per_page=10)
+    return render_template('admin_requests.html', requests=requests)
+
+@main.route('/api/requests/<int:request_id>', methods=['PUT'])
+@login_required
+@group_required('Administração')
+def update_request_status(request_id):
+    req = AccessRequest.query.get_or_404(request_id)
+    data = request.json
+    status = data.get('status')
+    admin_notes = data.get('admin_notes')
+
+    if status not in ['Pendente', 'Em andamento', 'Liberado', 'Negado']:
+        return jsonify(status='error', message='Status inválido.'), 400
+
+    req.status = status
+    req.admin_notes = admin_notes
+    db.session.commit()
+
+    return jsonify(status='success', message='Solicitação atualizada.')
 
 # --- API de Administração ---
 

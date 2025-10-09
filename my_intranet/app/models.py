@@ -19,6 +19,7 @@ class User(db.Model, UserMixin):
     groups = db.relationship('Group', secondary=user_group, backref='users')
     news = db.relationship('News', backref='author', lazy=True)
     events = db.relationship('Event', backref='creator', lazy=True)
+    requests = db.relationship('AccessRequest', backref='requester', lazy=True)
 
     def set_password(self, password):
         self.password = generate_password_hash(password, method='pbkdf2:sha256')
@@ -91,3 +92,25 @@ class Event(db.Model):
 
     def __repr__(self):
         return f"Event('{self.title}', '{self.event_date}')"
+
+class AccessRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    sistema = db.Column(db.String(150), nullable=False)
+    justificativa = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(50), nullable=False, default='Pendente')  # Status: Pendente, Em andamento, Liberado, Negado
+    admin_notes = db.Column(db.Text, nullable=True)
+    requested_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user': self.requester.username,
+            'sistema': self.sistema,
+            'justificativa': self.justificativa,
+            'status': self.status,
+            'admin_notes': self.admin_notes,
+            'requested_at': self.requested_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
