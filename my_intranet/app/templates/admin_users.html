@@ -258,7 +258,7 @@
     <!-- Painel da Direita: Usuários -->
     <main class="users-panel">
         <div class="users-header">
-            <h3>Usuários em <span id="selected-group-name">Nenhum</span></h3>
+            <h3>Usuários em <span id="selected-group-name">Todos</span></h3>
             <button id="add-user-btn">
                 <i class="fas fa-plus"></i> Adicionar Usuário
             </button>
@@ -376,314 +376,390 @@
 {% block scripts %}
 {{ super() }}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // State
-    let selectedGroupId = null;
-    let allGroups = []; // Cache para todos os grupos
-
-    // Elements
-    const groupTree = document.getElementById('group-tree');
-    const usersTableBody = document.getElementById('users-table-body');
-    const selectedGroupNameEl = document.getElementById('selected-group-name');
-    const noUsersMessage = document.getElementById('no-users-message');
-    const addUserBtn = document.getElementById('add-user-btn');
-
-    // Templates
-    const groupNodeTemplate = document.getElementById('group-node-template');
-    const userRowTemplate = document.getElementById('user-row-template');
-
-    // Modals
-    const groupModal = document.getElementById('group-modal');
-    const userModal = document.getElementById('user-modal');
-    const confirmModal = document.getElementById('confirm-modal');
+    document.addEventListener('DOMContentLoaded', function () {
     
-    // --- API Functions ---
-    const api = {
-        getGroups: () => fetch("{{ url_for('main.get_groups_api') }}").then(res => res.json()),
-        createGroup: (name, parentId) => fetch("{{ url_for('main.create_group_api') }}", {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ name, parent_id: parentId })
-        }).then(res => res.json()),
-        updateGroup: (id, name) => fetch(`{{ url_for('main.update_group_api', group_id=0) }}${id}`, {
-            method: 'PUT', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ name })
-        }).then(res => res.json()),
-        deleteGroup: (id) => fetch(`{{ url_for('main.delete_group_api', group_id=0) }}${id}`, { method: 'DELETE' }).then(res => res.json()),
-        
-        getUsersByGroup: (groupId) => fetch(`{{ url_for('main.get_users_by_group_api', group_id=0) }}${groupId}`).then(res => res.json()),
-        
-        createUser: (username, password, groupIds) => fetch("{{ url_for('main.create_user_api') }}", {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ username, password, group_ids: groupIds })
-        }).then(res => res.json()),
-
-        updateUser: (id, username, password, groupIds) => fetch(`{{ url_for('main.update_user_api', user_id=0) }}${id}`, {
-            method: 'PUT', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ username, password, group_ids: groupIds })
-        }).then(res => res.json()),
-        
-        getUserGroups: (userId) => fetch(`{{ url_for('main.get_user_groups_api', user_id=0) }}${userId}`).then(res => res.json()),
-
-        deleteUser: (id) => fetch(`{{ url_for('main.delete_user_api', user_id=0) }}${id}`, { method: 'DELETE' }).then(res => res.json()),
-        toggleUserStatus: (id, statusType) => fetch(`{{ url_for('main.toggle_user_status_api', user_id=0, status_type='_') }}${id}/${statusType}`, { method: 'POST' }).then(res => res.json()),
-    };
-
-    // --- Render & UI Functions ---
-    function flattenGroups(groups, level = 0, flatList = []) {
-        groups.forEach(group => {
-            flatList.push({ id: group.id, name: group.name, level: level });
-            if (group.children) {
-                flattenGroups(group.children, level + 1, flatList);
+        // ==============================
+        // ======= STATE & ELEMENTS =====
+        // ==============================
+        let selectedGroupId = null;
+        let allGroups = [];
+    
+        const groupTree = document.getElementById('group-tree');
+        const usersTableBody = document.getElementById('users-table-body');
+        const selectedGroupNameEl = document.getElementById('selected-group-name');
+        const noUsersMessage = document.getElementById('no-users-message');
+        const addUserBtn = document.getElementById('add-user-btn');
+    
+        const groupNodeTemplate = document.getElementById('group-node-template');
+        const userRowTemplate = document.getElementById('user-row-template');
+    
+        const groupModal = document.getElementById('group-modal');
+        const userModal = document.getElementById('user-modal');
+        const confirmModal = document.getElementById('confirm-modal');
+    
+        const BASE_URL = "/api"; // Ajuste aqui conforme suas rotas Flask
+    
+    
+        // ==============================
+        // ======== API FUNCTIONS =======
+        // ==============================
+        const api = {
+            // Groups
+            getGroups: () => fetch(`${BASE_URL}/groups`).then(res => res.json()),
+            createGroup: (name, parentId) => fetch(`${BASE_URL}/groups`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name, parent_id: parentId })
+            }).then(res => res.json()),
+    
+            updateGroup: (id, name) => fetch(`${BASE_URL}/groups/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name })
+            }).then(res => res.json()),
+    
+            deleteGroup: (id) => fetch(`${BASE_URL}/groups/${id}`, {
+                method: 'DELETE'
+            }).then(res => res.json()),
+    
+            // Users
+            getAllUsers: () => fetch(`${BASE_URL}/users`).then(res => res.json()),
+            getUsersByGroup: (groupId) => fetch(`${BASE_URL}/groups/${groupId}/users`).then(res => res.json()),
+    
+            createUser: (username, password, groupIds) => fetch(`${BASE_URL}/users`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username, password, group_ids: groupIds })
+            }).then(res => res.json()),
+    
+            updateUser: (id, username, password, groupIds) => fetch(`${BASE_URL}/users/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username, password, group_ids: groupIds })
+            }).then(res => res.json()),
+    
+            getUserGroups: (userId) => fetch(`${BASE_URL}/users/${userId}/groups`).then(res => res.json()),
+    
+            deleteUser: (id) => fetch(`${BASE_URL}/users/${id}`, {
+                method: 'DELETE'
+            }).then(res => res.json()),
+    
+            toggleUserStatus: (id, statusType) => fetch(`${BASE_URL}/users/${id}/toggle/${statusType}`, {
+                method: 'POST'
+            }).then(res => res.json()),
+        };
+    
+    
+        // ==============================
+        // ======== RENDER LOGIC ========
+        // ==============================
+        function flattenGroups(groups, level = 0, flatList = []) {
+            groups.forEach(group => {
+                flatList.push({ id: group.id, name: group.name, level });
+                if (group.children && group.children.length > 0) {
+                    flattenGroups(group.children, level + 1, flatList);
+                }
+            });
+            return flatList;
+        }
+    
+        function renderGroupTree(groups, container) {
+            container.innerHTML = '';
+            groups.forEach(group => {
+                const clone = groupNodeTemplate.content.cloneNode(true);
+                const li = clone.querySelector('li');
+                li.dataset.groupId = group.id;
+                li.querySelector('.name-text').textContent = group.name;
+    
+                const node = li.querySelector('.group-node');
+                if (group.id === selectedGroupId) node.classList.add('selected');
+    
+                if (group.children && group.children.length > 0) {
+                    li.classList.add('collapsible');
+                    let subUl = li.querySelector('ul');
+                    if (!subUl) {
+                        subUl = document.createElement('ul');
+                        li.appendChild(subUl);
+                    }
+                    renderGroupTree(group.children, subUl);
+                }
+                container.appendChild(li);
+            });
+        }
+    
+        function renderUsersTable(users) {
+            usersTableBody.innerHTML = '';
+            noUsersMessage.style.display = users.length === 0 ? 'block' : 'none';
+            noUsersMessage.textContent = users.length === 0 ? 'Nenhum usuário encontrado.' : '';
+    
+            users.forEach(user => {
+                const clone = userRowTemplate.content.cloneNode(true);
+                const tr = clone.querySelector('tr');
+                tr.dataset.userId = user.id;
+                tr.querySelector('.username').textContent = user.username;
+    
+                const statusEl = tr.querySelector('.status');
+                if (user.is_blocked) {
+                    statusEl.textContent = 'Bloqueado';
+                    statusEl.className = 'status status-blocked';
+                } else if (user.is_suspended) {
+                    statusEl.textContent = 'Suspenso';
+                    statusEl.className = 'status status-suspended';
+                } else {
+                    statusEl.textContent = 'Ativo';
+                    statusEl.className = 'status status-active';
+                }
+    
+                usersTableBody.appendChild(tr);
+            });
+        }
+    
+    
+        // ==============================
+        // ======== LOAD FUNCTIONS ======
+        // ==============================
+        async function loadAndRenderGroups() {
+            try {
+                const result = await api.getGroups();
+                if (result.groups) {
+                    allGroups = result.groups;
+                    renderGroupTree(allGroups, groupTree);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao carregar grupos.');
+            }
+        }
+    
+        async function loadAndRenderAllUsers() {
+            selectedGroupId = null;
+            selectedGroupNameEl.textContent = "Todos";
+            document.querySelectorAll('.group-node.selected').forEach(el => el.classList.remove('selected'));
+            usersTableBody.innerHTML = '';
+            noUsersMessage.textContent = "Carregando...";
+    
+            try {
+                const result = await api.getAllUsers();
+                renderUsersTable(result.users || []);
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao carregar usuários.');
+            }
+        }
+    
+        async function selectGroup(groupId) {
+            selectedGroupId = groupId;
+    
+            document.querySelectorAll('.group-node.selected').forEach(el => el.classList.remove('selected'));
+            const selectedNode = groupTree.querySelector(`li[data-group-id='${groupId}'] > .group-node`);
+            if (selectedNode) {
+                selectedNode.classList.add('selected');
+                selectedGroupNameEl.textContent = selectedNode.querySelector('.name-text').textContent;
+            }
+    
+            usersTableBody.innerHTML = '';
+            noUsersMessage.textContent = "Carregando...";
+    
+            try {
+                const result = await api.getUsersByGroup(groupId);
+                renderUsersTable(result.users || []);
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao carregar usuários do grupo.');
+            }
+        }
+    
+    
+        // ==============================
+        // ======== MODAL LOGIC =========
+        // ==============================
+        function openGroupModal(title, group = {}) {
+            document.getElementById('group-modal-title').textContent = title;
+            document.getElementById('group-id').value = group.id || '';
+            document.getElementById('parent-group-id').value = group.parent_id !== undefined ? group.parent_id : '';
+            document.getElementById('group-name-input').value = group.name || '';
+            groupModal.style.display = 'block';
+        }
+    
+        function populateGroupSelection(container, groups, selectedGroupIds = []) {
+            container.innerHTML = '';
+            const flatGroups = flattenGroups(groups);
+            flatGroups.forEach(group => {
+                const label = document.createElement('label');
+                label.className = 'group-checkbox-item';
+    
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = group.id;
+                checkbox.checked = selectedGroupIds.includes(group.id);
+    
+                label.appendChild(checkbox);
+                label.append(` ${'—'.repeat(group.level)} ${group.name}`);
+                container.appendChild(label);
+            });
+        }
+    
+        async function openUserModal(title, user = {}) {
+            document.getElementById('user-modal-title').textContent = title;
+            document.getElementById('user-id').value = user.id || '';
+            document.getElementById('username').value = user.username || '';
+            document.getElementById('password').value = '';
+            document.getElementById('password-help').style.display = user.id ? 'block' : 'none';
+    
+            const groupContainer = document.getElementById('group-selection-container');
+            let selectedGroupIds = [];
+    
+            try {
+                if (user.id) {
+                    const result = await api.getUserGroups(user.id);
+                    selectedGroupIds = result.group_ids || [];
+                } else if (selectedGroupId) {
+                    selectedGroupIds = [selectedGroupId];
+                }
+                populateGroupSelection(groupContainer, allGroups, selectedGroupIds);
+                userModal.style.display = 'block';
+            } catch (err) {
+                alert('Erro ao carregar grupos do usuário.');
+            }
+        }
+    
+        function openConfirmModal(title, body, onConfirm) {
+            document.getElementById('confirm-modal-title').textContent = title;
+            document.getElementById('confirm-modal-body').textContent = body;
+            confirmModal.style.display = 'block';
+    
+            const confirmBtn = document.getElementById('confirm-delete-btn');
+            confirmBtn.onclick = null;
+            confirmBtn.onclick = () => {
+                onConfirm();
+                closeAllModals();
+            };
+        }
+    
+        function closeAllModals() {
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+        }
+    
+    
+        // ==============================
+        // ======== EVENTOS UI ==========
+        // ==============================
+        document.getElementById('add-root-group-btn').addEventListener('click', () =>
+            openGroupModal('Criar Grupo Raiz', { parent_id: null })
+        );
+    
+        groupTree.addEventListener('click', e => {
+            const groupLi = e.target.closest('li[data-group-id]');
+            if (!groupLi) return;
+    
+            const groupId = parseInt(groupLi.dataset.groupId);
+    
+            if (e.target.closest('.btn-add-subgroup')) {
+                e.stopPropagation();
+                openGroupModal('Criar Subgrupo', { parent_id: groupId });
+            } else if (e.target.closest('.btn-edit-group')) {
+                e.stopPropagation();
+                const groupName = groupLi.querySelector('.name-text').textContent;
+                openGroupModal('Renomear Grupo', { id: groupId, name: groupName });
+            } else if (e.target.closest('.btn-delete-group')) {
+                e.stopPropagation();
+                openConfirmModal('Excluir Grupo',
+                    'Atenção: Todos os subgrupos e associações de usuários serão removidos. Deseja continuar?',
+                    async () => {
+                        await api.deleteGroup(groupId);
+                        loadAndRenderGroups();
+                        loadAndRenderAllUsers();
+                    }
+                );
+            } else if (e.target.closest('.group-node')) {
+                groupLi.classList.toggle('expanded');
+                selectGroup(groupId);
             }
         });
-        return flatList;
-    }
-
-    function renderGroupTree(groups, container) {
-        container.innerHTML = '';
-        groups.forEach(group => {
-            const clone = groupNodeTemplate.content.cloneNode(true);
-            const li = clone.querySelector('li');
-            li.dataset.groupId = group.id;
-            li.querySelector('.name-text').textContent = group.name;
-            
-            const groupNode = li.querySelector('.group-node');
-            if (group.id === selectedGroupId) {
-                groupNode.classList.add('selected');
-            }
-            
-            if (group.children && group.children.length > 0) {
-                li.classList.add('collapsible');
-                renderGroupTree(group.children, li.querySelector('ul'));
-            }
-            container.appendChild(li);
-        });
-    }
-
-    function renderUsersTable(users) {
-        usersTableBody.innerHTML = '';
-        noUsersMessage.style.display = users.length === 0 ? 'block' : 'none';
-        noUsersMessage.textContent = 'Nenhum usuário neste grupo.';
-
-        users.forEach(user => {
-            const clone = userRowTemplate.content.cloneNode(true);
-            const tr = clone.querySelector('tr');
-            tr.dataset.userId = user.id;
-            tr.querySelector('.username').textContent = user.username;
-            
-            const statusEl = tr.querySelector('.status');
-            if(user.is_blocked) {
-                statusEl.textContent = 'Bloqueado';
-                statusEl.className = 'status status-blocked';
-            } else if (user.is_suspended) {
-                statusEl.textContent = 'Suspenso';
-                statusEl.className = 'status status-suspended';
+    
+        document.getElementById('save-group-btn').addEventListener('click', async () => {
+            const id = document.getElementById('group-id').value;
+            const parentId = document.getElementById('parent-group-id').value;
+            const name = document.getElementById('group-name-input').value;
+    
+            if (!name) return alert('O nome do grupo é obrigatório.');
+    
+            const result = id
+                ? await api.updateGroup(id, name)
+                : await api.createGroup(name, parentId ? parseInt(parentId) : null);
+    
+            if (result.status === 'success') {
+                closeAllModals();
+                await loadAndRenderGroups();
             } else {
-                statusEl.textContent = 'Ativo';
-                statusEl.className = 'status status-active';
+                alert('Erro: ' + (result.message || 'Falha ao salvar grupo.'));
             }
-            usersTableBody.appendChild(tr);
         });
-    }
-
-    async function loadAndRenderGroups() {
-        const result = await api.getGroups();
-        if (result.groups) {
-            allGroups = result.groups;
-            renderGroupTree(allGroups, groupTree);
-        }
-    }
     
-    async function selectGroup(groupId) {
-        selectedGroupId = groupId;
-
-        document.querySelectorAll('.group-node.selected').forEach(el => el.classList.remove('selected'));
-        const selectedNode = groupTree.querySelector(`li[data-group-id='${groupId}'] > .group-node`);
-        if (selectedNode) {
-            selectedNode.classList.add('selected');
-            selectedGroupNameEl.textContent = selectedNode.querySelector('.name-text').textContent;
-        }
-        
-        noUsersMessage.textContent = "Carregando...";
-        usersTableBody.innerHTML = '';
-
-        const result = await api.getUsersByGroup(groupId);
-        renderUsersTable(result.users || []);
-    }
+        addUserBtn.addEventListener('click', () => openUserModal('Criar Novo Usuário'));
     
-    // -- Group Modal Logic --
-    function openGroupModal(title, group = {}) {
-        document.getElementById('group-modal-title').textContent = title;
-        document.getElementById('group-id').value = group.id || '';
-        document.getElementById('parent-group-id').value = group.parent_id !== undefined ? group.parent_id : '';
-        document.getElementById('group-name-input').value = group.name || '';
-        groupModal.style.display = 'block';
-    }
-
-    // -- User Modal Logic (AD Style) --
-    function populateGroupSelection(container, groups, selectedGroupIds = []) {
-        container.innerHTML = '';
-        const flatGroups = flattenGroups(groups);
-        flatGroups.forEach(group => {
-            const label = document.createElement('label');
-            label.className = 'group-checkbox-item';
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = group.id;
-            checkbox.checked = selectedGroupIds.includes(group.id);
-            
-            label.appendChild(checkbox);
-            label.append(` ${'—'.repeat(group.level)} ${group.name}`);
-            container.appendChild(label);
+        document.getElementById('save-user-btn').addEventListener('click', async () => {
+            const id = document.getElementById('user-id').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const selectedGroupIds = Array.from(document.querySelectorAll('#group-selection-container input:checked'))
+                .map(cb => parseInt(cb.value));
+    
+            if (!username) return alert('O nome de usuário é obrigatório.');
+            if (!id && !password) return alert('A senha é obrigatória para novos usuários.');
+            if (selectedGroupIds.length === 0) return alert('Selecione ao menos um grupo.');
+    
+            const result = id
+                ? await api.updateUser(id, username, password, selectedGroupIds)
+                : await api.createUser(username, password, selectedGroupIds);
+    
+            if (result.status === 'success') {
+                closeAllModals();
+                selectedGroupId ? selectGroup(selectedGroupId) : loadAndRenderAllUsers();
+            } else {
+                alert('Erro: ' + (result.message || 'Falha ao salvar usuário.'));
+            }
         });
-    }
-
-    async function openUserModal(title, user = {}) {
-        document.getElementById('user-modal-title').textContent = title;
-        document.getElementById('user-id').value = user.id || '';
-        document.getElementById('username').value = user.username || '';
-        document.getElementById('password').value = '';
-        document.getElementById('password-help').style.display = user.id ? 'block' : 'none';
-
-        const groupContainer = document.getElementById('group-selection-container');
-        let selectedGroupIds = [];
-
-        if(user.id) {
-            const result = await api.getUserGroups(user.id);
-            selectedGroupIds = result.group_ids || [];
-        } else if (selectedGroupId) {
-            selectedGroupIds = [selectedGroupId];
-        }
-
-        populateGroupSelection(groupContainer, allGroups, selectedGroupIds);
-        userModal.style.display = 'block';
-    }
-
-    // -- Confirm Modal --
-    function openConfirmModal(title, body, onConfirm) {
-        document.getElementById('confirm-modal-title').textContent = title;
-        document.getElementById('confirm-modal-body').textContent = body;
-        confirmModal.style.display = 'block';
-        
-        const confirmBtn = document.getElementById('confirm-delete-btn');
-        const newConfirmBtn = confirmBtn.cloneNode(true);
-        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-        newConfirmBtn.addEventListener('click', () => {
-            onConfirm();
-            closeAllModals();
+    
+        usersTableBody.addEventListener('click', e => {
+            const userRow = e.target.closest('tr[data-user-id]');
+            if (!userRow) return;
+            const userId = parseInt(userRow.dataset.userId);
+            const username = userRow.querySelector('.username').textContent;
+    
+            if (e.target.closest('.btn-edit-user')) {
+                openUserModal('Editar Usuário', { id: userId, username });
+            } else if (e.target.closest('.btn-suspend-user')) {
+                api.toggleUserStatus(userId, 'suspend')
+                    .then(() => selectedGroupId ? selectGroup(selectedGroupId) : loadAndRenderAllUsers());
+            } else if (e.target.closest('.btn-block-user')) {
+                api.toggleUserStatus(userId, 'block')
+                    .then(() => selectedGroupId ? selectGroup(selectedGroupId) : loadAndRenderAllUsers());
+            } else if (e.target.closest('.btn-delete-user')) {
+                openConfirmModal('Excluir Usuário',
+                    'Tem certeza que deseja excluir este usuário?',
+                    async () => {
+                        await api.deleteUser(userId);
+                        selectedGroupId ? selectGroup(selectedGroupId) : loadAndRenderAllUsers();
+                    }
+                );
+            }
         });
-    }
     
-    function closeAllModals() {
-        document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-    }
-
-    // -- Event Listeners --
+        document.querySelectorAll('.modal .close-btn').forEach(btn =>
+            btn.addEventListener('click', closeAllModals)
+        );
+        window.addEventListener('click', e => {
+            if (e.target.classList.contains('modal')) closeAllModals();
+        });
     
-    document.getElementById('add-root-group-btn').addEventListener('click', () => openGroupModal('Criar Grupo Raiz', { parent_id: null }));
     
-    groupTree.addEventListener('click', e => {
-        const groupLi = e.target.closest('li[data-group-id]');
-        if (!groupLi) return;
-        
-        const groupId = parseInt(groupLi.dataset.groupId);
-
-        if (e.target.closest('.btn-add-subgroup')) {
-            e.stopPropagation();
-            openGroupModal('Criar Subgrupo', { parent_id: groupId });
-        } else if (e.target.closest('.btn-edit-group')) {
-            e.stopPropagation();
-            const groupName = groupLi.querySelector('.name-text').textContent;
-            openGroupModal('Renomear Grupo', { id: groupId, name: groupName });
-        } else if (e.target.closest('.btn-delete-group')) {
-            e.stopPropagation();
-            openConfirmModal('Excluir Grupo', 'Atenção: Todos os subgrupos e associações de usuários serão removidos. Deseja continuar?', async () => {
-                await api.deleteGroup(groupId);
-                loadAndRenderGroups();
-            });
-        } else if (e.target.closest('.group-node')) {
-            groupLi.classList.toggle('expanded');
-            selectGroup(groupId);
-        }
+        // ==============================
+        // ======== INITIAL LOAD ========
+        // ==============================
+        loadAndRenderGroups();
+        loadAndRenderAllUsers();
     });
-
-    document.getElementById('save-group-btn').addEventListener('click', async () => {
-        const id = document.getElementById('group-id').value;
-        const parentId = document.getElementById('parent-group-id').value;
-        const name = document.getElementById('group-name-input').value;
-
-        if (!name) return alert('O nome do grupo é obrigatório.');
-
-        const result = id ? await api.updateGroup(id, name) : await api.createGroup(name, parentId ? parseInt(parentId) : null);
-        
-        if (result.status === 'success') {
-            closeAllModals();
-            await loadAndRenderGroups();
-        } else {
-            alert('Erro: ' + result.message);
-        }
-    });
+    </script>
     
-    addUserBtn.addEventListener('click', () => openUserModal('Criar Novo Usuário'));
-
-    document.getElementById('save-user-btn').addEventListener('click', async () => {
-        const id = document.getElementById('user-id').value;
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        
-        const selectedGroupIds = Array.from(document.querySelectorAll('#group-selection-container input:checked')).map(cb => parseInt(cb.value));
-
-        if(!username) return alert('O nome de usuário é obrigatório.');
-        if (!id && !password) return alert('A senha é obrigatória para novos usuários.');
-        if (selectedGroupIds.length === 0) return alert('Selecione ao menos um grupo.');
-        
-        const result = id 
-            ? await api.updateUser(id, username, password, selectedGroupIds)
-            : await api.createUser(username, password, selectedGroupIds);
-        
-        if (result.status === 'success'){
-            closeAllModals();
-            if(selectedGroupId) selectGroup(selectedGroupId); // Refresh user list if a group is selected
-        } else {
-            alert('Erro: ' + result.message);
-        }
-    });
-
-    usersTableBody.addEventListener('click', e => {
-        const userRow = e.target.closest('tr[data-user-id]');
-        if (!userRow) return;
-        const userId = parseInt(userRow.dataset.userId);
-        const username = userRow.querySelector('.username').textContent;
-
-        if (e.target.closest('.btn-edit-user')) {
-            e.preventDefault();
-            openUserModal('Editar Usuário', {id: userId, username: username});
-        }
-        else if (e.target.closest('.btn-suspend-user')) {
-             e.preventDefault();
-             api.toggleUserStatus(userId, 'suspend').then(() => selectedGroupId && selectGroup(selectedGroupId));
-        }
-        else if (e.target.closest('.btn-block-user')) {
-             e.preventDefault();
-             api.toggleUserStatus(userId, 'block').then(() => selectedGroupId && selectGroup(selectedGroupId));
-        }
-        else if (e.target.closest('.btn-delete-user')) {
-            e.preventDefault();
-            openConfirmModal('Excluir Usuário', 'Tem certeza que deseja excluir este usuário?', async () => {
-                await api.deleteUser(userId);
-                selectedGroupId && selectGroup(selectedGroupId);
-            });
-        }
-    });
-
-    document.querySelectorAll('.modal .close-btn').forEach(btn => btn.addEventListener('click', closeAllModals));
-    window.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal')) closeAllModals();
-    });
-
-    // Initial Load
-    loadAndRenderGroups();
-});
-</script>
 {% endblock %}

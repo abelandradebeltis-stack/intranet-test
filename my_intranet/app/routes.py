@@ -10,6 +10,20 @@ from werkzeug.utils import secure_filename
 
 main = Blueprint('main', __name__)
 
+
+@main.context_processor
+def inject_user_groups():
+    """
+    Injects the current user's group names into the template context.
+    This allows checking for group membership directly in Jinja2 templates.
+    e.g., {% if 'Marketing' in user_groups %}
+    """
+    if current_user.is_authenticated:
+        user_groups = {group.name for group in current_user.groups}
+        return dict(user_groups=user_groups)
+    return dict(user_groups=set()) # Return an empty set for anonymous users
+
+
 # --- Função Auxiliar para Salvar Imagens ---
 def save_image(file, upload_folder):
     if file and file.filename != '':
@@ -160,6 +174,13 @@ def get_users_by_group_api(group_id):
     users = group.users
     return jsonify(users=[u.to_dict() for u in users])
 
+@main.route('/api/users', methods=['GET'], endpoint='get_all_users_api')
+@login_required
+@group_required('Administração')
+def get_all_users_api():
+    users = User.query.all()
+    return jsonify(users=[u.to_dict() for u in users])
+
 @main.route('/api/users', methods=['POST'], endpoint='create_user_api')
 @login_required
 @group_required('Administração')
@@ -167,10 +188,10 @@ def create_user_api():
     data = request.json
     username = data.get('username')
     password = data.get('password')
-    group_ids = data.get('group_ids')
+    group_ids = data.get('group_ids', [])
 
-    if not username or not password or not group_ids:
-        return jsonify(status='error', message='Dados incompletos (usuário, senha e grupos são obrigatórios).'), 400
+    if not username or not password:
+        return jsonify(status='error', message='Dados incompletos (usuário e senha são obrigatórios).'), 400
 
     if User.query.filter_by(username=username).first():
         return jsonify(status='error', message='Nome de usuário já existe.'), 400
@@ -178,15 +199,23 @@ def create_user_api():
     new_user = User(username=username)
     new_user.set_password(password)
 
-    if group_ids:
-        groups = Group.query.filter(Group.id.in_(group_ids)).all()
-        if len(groups) != len(group_ids):
-            return jsonify(status='error', message='Um ou mais grupos não foram encontrados.'), 404
+    # Buscar grupos padrão
+    default_group_names = ['Inicio', 'Contato', 'RH Externo']
+    default_groups = Group.query.filter(Group.name.in_(default_group_names)).all()
+    
+    # Unir IDs de grupos selecionados com os padrões (usando set para evitar duplicatas)
+    final_group_ids = set(group_ids) | {g.id for g in default_groups}
+
+    # Associar grupos ao novo usuário
+    if final_group_ids:
+        groups = Group.query.filter(Group.id.in_(list(final_group_ids))).all()
+        if len(groups) != len(final_group_ids):
+             return jsonify(status='error', message='Um ou mais grupos (incluindo padrões) não foram encontrados. Execute a inicialização do DB.'), 500
         new_user.groups = groups
     
     db.session.add(new_user)
     db.session.commit()
-    return jsonify(status='success', message='Usuário criado.', user=new_user.to_dict())
+    return jsonify(status='success', message='Usuário criado com acesso padrão.', user=new_user.to_dict())
 
 @main.route('/api/users/<int:user_id>', methods=['PUT'], endpoint='update_user_api')
 @login_required
