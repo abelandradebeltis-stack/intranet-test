@@ -238,6 +238,14 @@ def update_user_api(user_id):
         user.set_password(password)
         
     if group_ids is not None:
+        # Lógica para proteger o grupo '_acesso_total_' do admin
+        if user.username == 'admin':
+            acesso_total_group = Group.query.filter_by(name='_acesso_total_').first()
+            if acesso_total_group:
+                # Garante que o ID do grupo de acesso total esteja na lista
+                if acesso_total_group.id not in group_ids:
+                    group_ids.append(acesso_total_group.id)
+
         groups = Group.query.filter(Group.id.in_(group_ids)).all()
         if len(groups) != len(set(group_ids)):
             return jsonify(status='error', message='Um ou mais IDs de grupo são inválidos.'), 404
