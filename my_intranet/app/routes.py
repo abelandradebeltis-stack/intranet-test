@@ -2,7 +2,7 @@
 import os
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, current_app
 from flask_login import login_user, logout_user, login_required, current_user
-from .models import User, Group, News, Event, AccessRequest
+from .models import User, Group, News, Event, AccessRequest, Notification
 from . import db
 from .decorators import group_required
 from datetime import datetime
@@ -22,6 +22,16 @@ def inject_user_groups():
         user_groups = {group.name for group in current_user.groups}
         return dict(user_groups=user_groups)
     return dict(user_groups=set()) # Return an empty set for anonymous users
+
+@main.context_processor
+def inject_notifications():
+    """
+    Injects the current user's unread notifications into the template context.
+    """
+    if current_user.is_authenticated:
+        unread_notifications = Notification.query.filter_by(user_id=current_user.id, is_read=False).order_by(Notification.created_at.desc()).all()
+        return dict(unread_notifications=unread_notifications)
+    return dict(unread_notifications=[]) # Return an empty list for anonymous users
 
 
 # --- Função Auxiliar para Salvar Imagens ---
@@ -89,6 +99,12 @@ def dashboard():
 @login_required
 def ramais():
     return render_template('ramais.html')
+
+@main.route('/notifications')
+@login_required
+def notifications():
+    all_notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).all()
+    return render_template('notifications.html', notifications=all_notifications)
 
 # --- Rotas de Sistemas ---
 @main.route('/sistemas')
@@ -171,10 +187,27 @@ def update_request_status(request_id):
 
     req.status = status
     req.admin_notes = admin_notes
+
+    # Create a notification for the user
+    notification_message = f"Sua solicitação para '{req.sistema}' foi atualizada para: {status}."
+    notification = Notification(
+        message=notification_message,
+        user_id=req.user_id,
+        link=url_for('main.sistemas_acessos')
+    )
+    db.session.add(notification)
+    
     db.session.commit()
 
     return jsonify(status='success', message='Solicitação atualizada.')
 
+@main.route('/api/notifications/mark-read', methods=['POST'])
+@login_required
+def mark_notifications_read():
+    Notification.query.filter_by(user_id=current_user.id, is_read=False).update({'is_read': True})
+    db.session.commit()
+    return jsonify(status='success', message='Notifications marked as read.')
+    
 # --- API de Administração ---
 
 def serialize_group(group):

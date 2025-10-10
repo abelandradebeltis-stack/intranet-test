@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash
 from dotenv import load_dotenv
@@ -51,6 +51,17 @@ def create_app():
     # Registra o Blueprint com as rotas
     from .routes import main as main_blueprint
     app.register_blueprint(main_blueprint)
+
+    @app.context_processor
+    def inject_notifications():
+        if current_user.is_authenticated:
+            # Pega as 10 notificações mais recentes para exibição
+            notifications = models.Notification.query.filter_by(user_id=current_user.id).order_by(models.Notification.created_at.desc()).limit(10).all()
+            # Conta as notificações não lidas
+            unread_count = models.Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+            return dict(notifications=notifications, unread_notifications_count=unread_count)
+        return dict(notifications=[], unread_notifications_count=0)
+
 
     # Adiciona o comando para criar admin
     @app.cli.command("create-admin")

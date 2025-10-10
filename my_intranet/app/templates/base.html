@@ -22,6 +22,37 @@
             <h1>{% block page_title %}{% endblock %}</h1>
         </div>
         <div class="top-bar-right">
+
+            <div class="notification-icon" id="notification-icon">
+                <i class="fas fa-bell"></i>
+                {% if unread_notifications_count > 0 %}
+                <span class="notification-count">{{ unread_notifications_count }}</span>
+                {% endif %}
+            </div>
+
+            <div class="notification-dropdown" id="notification-dropdown">
+                <div class="notification-header">
+                    <h3>Notificações</h3>
+                </div>
+                <div class="notification-body">
+                    {% if notifications %}
+                        {% for notification in notifications %}
+                        <div class="notification-item">
+                            <p>{{ notification.message }}</p>
+                            <span class="notification-time">{{ notification.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="notification-item">
+                            <p>Nenhuma notificação nova.</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="notification-footer">
+                    <a href="{{ url_for('main.notifications') }}">Ver todas as notificações</a>
+                </div>
+            </div>
+
             <a href="{{ url_for('main.logout') }}" class="top-bar-link logout-button">
                 <i class="fas fa-sign-out-alt"></i> Sair
             </a>
@@ -369,11 +400,100 @@
                 }, 500);
             }, 5000);
         }
+
+        const notificationIcon = document.getElementById('notification-icon');
+        const notificationDropdown = document.getElementById('notification-dropdown');
+        const notificationCount = document.querySelector('.notification-count');
+
+        notificationIcon.addEventListener('click', () => {
+            notificationDropdown.classList.toggle('show');
+
+            if (notificationCount) {
+                fetch('/api/notifications/mark-read', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            notificationCount.style.display = 'none';
+                        }
+                    });
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!notificationIcon.contains(event.target) && !notificationDropdown.contains(event.target)) {
+                notificationDropdown.classList.remove('show');
+            }
+        });
+
     </script>
     {% endblock %}
 </body>
 </html>
 <style>
+
+    .notification-icon {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .notification-count {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: red;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 6px;
+        font-size: 10px;
+    }
+
+    .notification-dropdown {
+        display: none;
+        position: absolute;
+        top: 50px;
+        right: 10px;
+        width: 300px;
+        background-color: white;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+    }
+
+    .notification-dropdown.show {
+        display: block;
+    }
+
+    .notification-header {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .notification-body {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .notification-item {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .notification-item:last-child {
+        border-bottom: none;
+    }
+
+    .notification-time {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .notification-footer {
+        padding: 10px;
+        text-align: center;
+        border-top: 1px solid #eee;
+    }
+
 #toast-container {
     position: fixed;
     top: 20px;
