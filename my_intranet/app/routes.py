@@ -59,23 +59,69 @@ def welcome():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
-    
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
 
-        if not user or not user.check_password(password):
+        MAX_ATTEMPTS = 4  # limite de tentativas antes do bloqueio
+
+        # --- Verifica se o usuário existe ---
+        if not user:
             flash('Usuário ou senha inválidos. Por favor, tente novamente.', 'error')
-        elif user.is_blocked:
-            flash('Esta conta foi bloqueada por um administrador.', 'error')
-        elif user.is_suspended:
-            flash('Esta conta está temporariamente suspensa.', 'error')
-        else:
+            return render_template('login.html')
+
+        # --- Verifica bloqueios e suspensão ---
+        if user.is_locked:
+            flash('Sua conta foi bloqueada por excesso de tentativas. Por favor, entre em contato com o suporte.', 'error')
+            return render_template('login.html')
+        if user.is_blocked:
+            flash('Sua conta foi bloqueada manualmente pelo administrador. Entre em contato com o suporte.', 'error')
+            return render_template('login.html')
+        if user.is_suspended:
+            flash('Sua conta está suspensa. Entre em contato com o administrador.', 'error')
+            return render_template('login.html')
+
+        # --- Verifica senha ---
+        if user.check_password(password):
+            # Zera o contador de falhas, se necessário
+            if (user.failed_login_attempts or 0) > 0:
+                user.failed_login_attempts = 0
+                db.session.commit()
+
             login_user(user)
             return redirect(url_for('main.dashboard'))
-            
+
+        # --- Senha incorreta ---
+        if user.username != 'admin':
+            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+
+            # Bloqueia automaticamente se atingir o limite
+            if user.failed_login_attempts >= MAX_ATTEMPTS:
+                user.is_locked = True
+
+                # Notificar administradores
+                admins = User.query.join(User.groups).filter(Group.name == 'Administração').all()
+                for admin in admins:
+                    notification = Notification(
+                        message=f"O usuário '{user.username}' foi bloqueado por excesso de tentativas de login.",
+                        link=url_for('main.administracao_usuarios'),
+                        user_id=admin.id
+                    )
+                    db.session.add(notification)
+
+                flash('Sua conta foi bloqueada por excesso de tentativas. Por favor, entre em contato com o suporte.', 'error')
+            else:
+                remaining_attempts = MAX_ATTEMPTS - user.failed_login_attempts
+                flash(f'Usuário ou senha inválidos. Você tem mais {remaining_attempts} tentativa(s).', 'error')
+
+            db.session.commit()
+        else:
+            flash('Usuário ou senha inválidos. Por favor, tente novamente.', 'error')
+
     return render_template('login.html')
+
 
 @main.route('/logout')
 @login_required
@@ -371,20 +417,37 @@ def delete_user_api(user_id):
     db.session.commit()
     return jsonify(status='success', message='Usuário excluído.')
 
-@main.route('/api/users/<int:user_id>/<string:status_type>', methods=['POST'], endpoint='toggle_user_status_api')
+@main.route('/api/users/<int:user_id>/toggle/<string:status_type>', methods=['POST'], endpoint='toggle_user_status_api')
 @login_required
 @group_required('Administração')
 def toggle_user_status_api(user_id, status_type):
     user = User.query.get_or_404(user_id)
+    message = ""
     if status_type == 'suspend':
         user.is_suspended = not user.is_suspended
+        message = "Usuário suspenso com sucesso." if user.is_suspended else "Usuário reativado com sucesso."
     elif status_type == 'block':
         user.is_blocked = not user.is_blocked
+        message = "Usuário bloqueado com sucesso." if user.is_blocked else "Usuário desbloqueado com sucesso."
     else:
         return jsonify(status='error', message='Tipo de status inválido.'), 400
     
     db.session.commit()
-    return jsonify(status='success', message=f'Status do usuário atualizado.', user=user.to_dict())
+    return jsonify(status='success', message=message, user=user.to_dict())
+
+@main.route('/api/users/<int:user_id>/unlock', methods=['POST'])
+@login_required
+@group_required('Administração')
+def unlock_user_api(user_id):
+    user = User.query.get_or_404(user_id)
+    if not user.is_locked:
+        return jsonify(status='error', message='O usuário não está bloqueado por falha de login.'), 400
+        
+    user.is_locked = False
+    user.failed_login_attempts = 0
+    db.session.commit()
+    
+    return jsonify(status='success', message='Usuário desbloqueado com sucesso.', user=user.to_dict())
 
 # --- Notícias ---
 @main.route('/marketing/noticias/publicar', methods=['GET', 'POST'])

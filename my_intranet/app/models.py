@@ -14,7 +14,9 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    is_blocked = db.Column(db.Boolean, default=False)
+    failed_login_attempts = db.Column(db.Integer, default=0)
+    is_locked = db.Column(db.Boolean, default=False) # This is the backend field for login blocking
+    is_blocked = db.Column(db.Boolean, default=False) # This is for manual admin blocking
     is_suspended = db.Column(db.Boolean, default=False)
     groups = db.relationship('Group', secondary=user_group, backref='users')
     news = db.relationship('News', backref='author', lazy=True)
@@ -34,9 +36,15 @@ class User(db.Model, UserMixin):
         return False
 
     def to_dict(self):
+        """
+        Serializes the User object to a dictionary.
+        The key 'is_login_blocked' is intentionally used to map the 'is_locked' field,
+        as this is what the frontend template expects.
+        """
         return {
             'id': self.id,
             'username': self.username,
+            'is_login_blocked': self.is_locked, # Maps backend is_locked to frontend is_login_blocked
             'is_blocked': self.is_blocked,
             'is_suspended': self.is_suspended
         }

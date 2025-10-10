@@ -364,10 +364,17 @@
         <td class="username"></td>
         <td class="status"></td>
         <td class="user-actions">
-            <a href="#" class="btn-edit-user" title="Editar"><i class="fas fa-pen"></i></a>
-            <a href="#" class="btn-suspend-user" title="Suspender/Reativar"><i class="fas fa-user-clock"></i></a>
-            <a href="#" class="btn-block-user" title="Bloquear/Desbloquear"><i class="fas fa-user-lock"></i></a>
-            <button class="btn-delete-user" title="Excluir"><i class="fas fa-trash"></i></button>
+            <div class="default-actions">
+                <a href="#" class="btn-edit-user" title="Editar"><i class="fas fa-pen"></i></a>
+                <a href="#" class="btn-suspend-user" title="Suspender/Reativar"><i class="fas fa-user-clock"></i></a>
+                <a href="#" class="btn-block-user" title="Bloquear/Desbloquear"><i class="fas fa-user-lock"></i></a>
+                <button class="btn-delete-user" title="Excluir"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="unlock-action" style="display: none;">
+                <button class="btn btn-warning btn-sm btn-unlock-user" title="Desbloquear Conta por Falha de Login">
+                    <i class="fas fa-key"></i> Desbloquear (Login)
+                </button>
+            </div>
         </td>
     </tr>
 </template>
@@ -447,6 +454,10 @@
             toggleUserStatus: (id, statusType) => fetch(`${BASE_URL}/users/${id}/toggle/${statusType}`, {
                 method: 'POST'
             }).then(res => res.json()),
+
+            unlockUser: (id) => fetch(`${BASE_URL}/users/${id}/unlock`, { // Rota para desbloquear
+                method: 'POST'
+            }).then(res => res.json()),
         };
     
     
@@ -499,15 +510,29 @@
                 tr.querySelector('.username').textContent = user.username;
     
                 const statusEl = tr.querySelector('.status');
-                if (user.is_blocked) {
+                const defaultActions = tr.querySelector('.default-actions');
+                const unlockAction = tr.querySelector('.unlock-action');
+
+                if (user.is_login_blocked) {
+                    statusEl.textContent = 'Bloqueado (Login)';
+                    statusEl.className = 'status status-blocked';
+                    defaultActions.style.display = 'none';
+                    unlockAction.style.display = 'block';
+                } else if (user.is_blocked) {
                     statusEl.textContent = 'Bloqueado';
                     statusEl.className = 'status status-blocked';
+                    defaultActions.style.display = 'block';
+                    unlockAction.style.display = 'none';
                 } else if (user.is_suspended) {
                     statusEl.textContent = 'Suspenso';
                     statusEl.className = 'status status-suspended';
+                    defaultActions.style.display = 'block';
+                    unlockAction.style.display = 'none';
                 } else {
                     statusEl.textContent = 'Ativo';
                     statusEl.className = 'status status-active';
+                    defaultActions.style.display = 'block';
+                    unlockAction.style.display = 'none';
                 }
     
                 usersTableBody.appendChild(tr);
@@ -735,6 +760,15 @@
             } else if (e.target.closest('.btn-block-user')) {
                 api.toggleUserStatus(userId, 'block')
                     .then(() => selectedGroupId ? selectGroup(selectedGroupId) : loadAndRenderAllUsers());
+            } else if (e.target.closest('.btn-unlock-user')) { // Evento para o novo botão
+                api.unlockUser(userId)
+                    .then(result => {
+                        if(result.status === 'success') {
+                            selectedGroupId ? selectGroup(selectedGroupId) : loadAndRenderAllUsers();
+                        } else {
+                            alert('Erro: ' + (result.message || 'Falha ao desbloquear usuário.'));
+                        }
+                    });
             } else if (e.target.closest('.btn-delete-user')) {
                 openConfirmModal('Excluir Usuário',
                     'Tem certeza que deseja excluir este usuário?',
@@ -760,6 +794,6 @@
         loadAndRenderGroups();
         loadAndRenderAllUsers();
     });
-    </script>
+</script>
     
 {% endblock %}
