@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Ferramentas de TI{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .tool-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .tool-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        height: 80%;
+        margin-bottom: 1rem;
+       
+    }
+
+    .tool-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 1.5rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease-in-out;
+        height: 80%;
+        background-color: #fff;
+    }
+    .tool-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-color: #007bff;
+    }
+    .tool-logo {
+        max-height: 80px;
+        max-width: 100%;
+        margin-bottom: 1rem;
+    }
+    .tool-name {
+        font-weight: 600;
+        margin-top: auto;
+    }
+</style>
+{% endblock %}
+
+{% block page_title %}Ferramentas de TI{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 style="text-align: center; color: #2c3e50; padding: 1rem;" class="mb-4">Ferramentas e utilidades</h2>
+    <div class="tool-grid">
+        {% set tools = [
+            {
+                "name": "AnyDesk", 
+                "logo": "https://img.icons8.com/color/144/anydesk.png", 
+                "url": "https://anydesk.com/"
+            },
+            {
+                "name": "TeamViewer", 
+                "logo": "https://img.icons8.com/?size=100&id=ZaNwVVMc2TNX&format=png&color=000000", 
+                "url": "https://www.teamviewer.com/"
+            },
+            {
+                "name": "Advanced IP Scanner",
+                "logo": "https://img.icons8.com/?size=100&id=gVhp1zAdT1IN&format=png&color=000000",
+                "url": "https://www.advanced-ip-scanner.com/"
+            },
+            {
+                "name": "WhatsApp",
+                "logo": "https://img.icons8.com/color/144/whatsapp--v1.png",
+                "url": "https://web.whatsapp.com/"
+            },
+            {
+                "name": "Discord",
+                "logo": "https://img.icons8.com/color/144/discord-logo.png",
+                "url": "https://discord.com/"
+            },
+            {
+                "name": "FileZilla",
+                "logo": "https://img.icons8.com/color/144/filezilla.png",
+                "url": "https://filezilla-project.org/"
+            },
+            {
+                "name": "VS Code",
+                "logo": "https://img.icons8.com/color/144/visual-studio-code-2019.png",
+                "url": "https://code.visualstudio.com/"
+            },
+            {
+                "name": "Firebase",
+                "logo": "https://img.icons8.com/color/144/firebase.png",
+                "url": "https://console.firebase.google.com/"
+            },
+            {
+                "name": "Microsoft Azure",
+                "logo": "https://img.icons8.com/color/144/azure-1.png",
+                "url": "https://portal.azure.com/"
+            },
+            {
+                "name": "Google Cloud",
+                "logo": "https://img.icons8.com/color/144/google-cloud.png",
+                "url": "https://console.cloud.google.com/"
+            }
+        ] %}
+
+        {% for tool in tools %}
+        <a href="{{ tool.url }}" target="_blank" class="tool-card-link">
+            <div class="tool-card">
+                <img src="{{ tool.logo }}" alt="Logo {{ tool.name }}" class="tool-logo">
+                <div class="tool-name">{{ tool.name }}</div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

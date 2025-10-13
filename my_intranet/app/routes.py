@@ -146,6 +146,12 @@ def dashboard():
 def ramais():
     return render_template('ramais.html')
 
+@main.route('/rh/aniversariantes')
+@login_required
+@group_required('Recursos Humanos')
+def rh_aniversariantes():
+    return render_template('rh_aniversariantes.html')
+
 @main.route('/notifications')
 @login_required
 def notifications():
@@ -188,6 +194,17 @@ def sistemas_solicitacoes():
         
     return render_template('sistemas_solicitacoes.html')
 
+@main.route('/sistemas/suporte')
+@login_required
+@group_required('Sistemas')
+def sistemas_suporte():
+    return render_template('sistemas_suporte.html')
+
+@main.route('/sistemas/ferramentas')
+@login_required
+@group_required('Sistemas')
+def sistemas_ferramentas():
+    return render_template('sistemas_ferramentas.html')
 
 # --- Rotas de Administração ---
 
@@ -481,7 +498,7 @@ def noticias_editar(news_id):
         image_file = request.files.get('image')
 
         if image_file:
-            image_url = save_image(image_file, 'uploads/news_images')
+            image_url = save__image(image_file, 'uploads/news_images')
             news_item.image_url = image_url
 
         db.session.commit()

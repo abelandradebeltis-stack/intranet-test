@@ -109,7 +109,7 @@
                 {% endif %}
 
                 {% if 'Sistemas' in user_groups or 'Sistemas - Suporte' in user_groups or 'Sistemas - Inventário' in user_groups or 'Sistemas - Ferramentas' in user_groups or 'Sistemas - Webmail' in user_groups %}
-                <li class="has-submenu {% if request.endpoint in ['main.sistemas_geral', 'main.sistemas_acessos', 'main.sistemas_solicitacoes'] %}is-open{% endif %}">
+                <li class="has-submenu {% if request.endpoint in ['main.sistemas_geral', 'main.sistemas_acessos', 'main.sistemas_solicitacoes', 'main.sistemas_suporte', 'main.sistemas_ferramentas'] %}is-open{% endif %}">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-laptop-code"></i>
                         <span class="menu-text">Sistemas</span>
@@ -122,13 +122,13 @@
                         <li><a href="{{ url_for('main.sistemas_solicitacoes') }}" {% if request.endpoint == 'main.sistemas_solicitacoes' %}class="active"{% endif %}><span class="submenu-text">Solicitar Acesso</span></a></li>
                         {% endif %}
                         {% if 'Sistemas - Suporte' in user_groups or 'Sistemas' in user_groups %}
-                        <li><a href="#"><span class="submenu-text">Suporte</span></a></li>
+                        <li><a href="{{ url_for('main.sistemas_suporte') }}" {% if request.endpoint == 'main.sistemas_suporte' %}class="active"{% endif %}><span class="submenu-text">Suporte</span></a></li>
                         {% endif %}
                         {% if 'Sistemas - Inventário' in user_groups or 'Sistemas' in user_groups %}
                         <li><a href="#"><span class="submenu-text">Inventário</span></a></li>
                         {% endif %}
                         {% if 'Sistemas - Ferramentas' in user_groups or 'Sistemas' in user_groups %}
-                        <li><a href="#"><span class="submenu-text">Ferramentas</span></a></li>
+                        <li><a href="{{ url_for('main.sistemas_ferramentas') }}" {% if request.endpoint == 'main.sistemas_ferramentas' %}class="active"{% endif %}><span class="submenu-text">Ferramentas</span></a></li>
                         {% endif %}
                         {% if 'Sistemas - Webmail' in user_groups or 'Sistemas' in user_groups %}
                         <li><a href="https://webmailpro.uol.com.br/"  target="_blank" ><span class="submenu-text">Webmail</span></a></li>
@@ -182,7 +182,7 @@
                 </li>
                 {% endif %}
 
-                {% if 'Recursos Humanos - Recrutamento' in user_groups or 'Recursos Humanos - Benefícios' in user_groups or 'Recursos Humanos - Folha de Pagamento' in user_groups or 'Recursos Humanos - Avaliações de Desempenho' in user_groups or 'Recursos Humanos - Administração' in user_groups or 'Recursos Humanos' in user_groups %}
+                {% if 'Recursos Humanos - Aniversariantes' in user_groups or 'Recursos Humanos - Recrutamento' in user_groups or 'Recursos Humanos - Benefícios' in user_groups or 'Recursos Humanos - Folha de Pagamento' in user_groups or 'Recursos Humanos - Avaliações de Desempenho' in user_groups or 'Recursos Humanos - Administração' in user_groups or 'Recursos Humanos' in user_groups %}
                 <li class="has-submenu {% if request.endpoint.startswith('main.rh') %}is-open{% endif %}">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-id-badge"></i>
@@ -190,6 +190,9 @@
                         <i class="fas fa-chevron-down submenu-arrow"></i>
                     </a>
                     <ul class="sidebar-submenu">
+                        {% if 'Recursos Humanos - Aniversariantes' in user_groups or 'Recursos Humanos' in user_groups %}
+                        <li><a href="{{ url_for('main.rh_aniversariantes') }}" {% if request.endpoint == 'main.rh_aniversariantes' %}class="active"{% endif %}><span class="submenu-text">Aniversariantes</span></a></li>
+                        {% endif %}
                         {% if 'Recursos Humanos - Recrutamento' in user_groups or 'Recursos Humanos' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.rh_recrutamento' %}class="active"{% endif %}><span class="submenu-text">Recrutamento</span></a></li>
                         {% endif %}
