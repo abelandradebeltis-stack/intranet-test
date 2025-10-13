@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block page_title %}Bem-vindo, {{ current_user.username }}!{% endblock %}
+
+{% block body_class %}dashboard-page{% endblock %}
+
+{% block content %}
+{# Seção para Administradores com solicitações pendentes #}
+{% if pending_requests %}
+<section class="admin-dashboard-section">
+    <div class="section-header">
+        <h4><i class="fas fa-exclamation-triangle"></i> Solicitações de Acesso Pendentes</h4>
+        <a href="{{ url_for('main.administracao_solicitacoes') }}" class="btn-primary">Gerenciar Solicitações</a>
+    </div>
+    <div class="pending-requests-list">
+        <div class="list-header">
+            <span class="col-user">Usuário</span>
+            <span class="col-system">Sistema</span>
+            <span class="col-date">Data</span>
+        </div>
+        {% for req in pending_requests %}
+        <a href="{{ url_for('main.administracao_solicitacoes', request_id=req.id) }}" class="pending-request-item">
+            <span class="user" title="{{ req.requester.username }}"><i class="fas fa-user"></i> {{ req.requester.username }}</span>
+            <span class="system" title="{{ req.sistema }}"><i class="fas fa-laptop-code"></i> {{ req.sistema }}</span>
+            <span class="date"><i class="fas fa-clock"></i> {{ req.requested_at.strftime('%d/%m %H:%M') }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{# Seção Padrão do Dashboard #}
+<section class="dashboard">
+    <div class="card">
+        <h4>Comunicados Importantes</h4>
+        <p>Fique por dentro das últimas novidades e anúncios da empresa.</p>
+    </div>
+    <div class="card">
+        <h4>Próximos Eventos</h4>
+        <p>Veja os eventos e treinamentos que estão por vir.</p>
+    </div>
+    <div class="card">
+        <h4>Recursos Humanos</h4>
+        <p>Acesse rapidamente informações sobre férias, benefícios e políticas internas.</p>
+    </div>
+</section>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+.admin-dashboard-section {
+    background-color: var(--background-white);
+    border-radius: 8px;
+    padding: 20px 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-top: 4px solid #dc3545; /* Alterado para vermelho */
+}
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.section-header h4 {
+    margin: 0;
+    color: var(--text-color-dark);
+    font-size: 18px;
+}
+.section-header h4 .fas {
+    margin-right: 10px;
+    color: #dc3545; /* Alterado para vermelho */
+}
+.pending-requests-list .list-header {
+    display: grid;
+    grid-template-columns: 35% 40% 25%;
+    padding: 0 15px 10px 15px;
+    font-weight: 600;
+    color: var(--text-color-light);
+    font-size: 13px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-color);
+}
+.list-header .col-date { text-align: right; }
+
+.pending-request-item {
+    display: grid;
+    grid-template-columns: 35% 40% 25%;
+    align-items: center;
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin-top: 10px;
+    font-size: 15px;
+    background-color: var(--background-light);
+    color: var(--text-color-dark);
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+    border-left: 4px solid #ffc107;
+}
+.pending-request-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(0,0,0,0.08);
+    background-color: #f1f3f5;
+}
+.pending-request-item .fas {
+    margin-right: 8px;
+    color: var(--text-color-light);
+}
+.pending-request-item span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pending-request-item .date {
+    text-align: right;
+    color: var(--text-color-light);
+}
+</style>
+{% endblock %}

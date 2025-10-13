@@ -1,0 +1,11 @@
+Flask>=2.2
+gunicorn
+psycopg2-binary
+SQLAlchemy
+Flask-Migrate
+alembic
+redis
+flask-login
+python-dotenv
+ldap3
+Flask-LDAP3-Login

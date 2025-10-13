@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}{% if article %}Editar Artigo{% else %}Novo Artigo{% endif %} - Base de Conhecimento{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/post_editor.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="post-editor-container">
+    <form method="post" enctype="multipart/form-data">
+        <div class="post-editor-header">
+            <h3>{% if article %}Editar Artigo{% else %}Criar Novo Artigo{% endif %}</h3>
+        </div>
+
+        <div class="post-editor-body">
+            <div class="form-group">
+                <label for="title">Título</label>
+                <input type="text" id="title" name="title" class="form-control" value="{{ article.title if article else '' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="content">Conteúdo</label>
+                <textarea id="content" name="content" class="form-control">{{ article.content if article else '' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="image-upload-input">Imagem (Opcional)</label>
+                <input type="file" id="image-upload-input" name="image" class="form-control" accept="image/*">
+            </div>
+
+            <div id="image-preview-container">
+                {% if article and article.image_path %}
+                    <img id="image-preview" src="{{ url_for('static', filename=article.image_path) }}" alt="Pré-visualização da imagem" style="display: block;">
+                    <span id="preview-placeholder" style="display: none;">Pré-visualização da Imagem</span>
+                {% else %}
+                    <img id="image-preview" src="" alt="Pré-visualização da imagem" style="display: none;">
+                    <span id="preview-placeholder" style="display: block;">Pré-visualização da Imagem</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="post-editor-footer">
+             <a href="{{ url_for('main.knowledge_base') }}" class="btn btn-light me-2">
+                <i class="fas fa-times me-2"></i>Cancelar
+            </a>
+            <button type="submit" class="btn-publish">
+                <i class="fas fa-save me-1"></i> {% if article %}Salvar Alterações{% else %}Publicar Artigo{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/tinymce@5/tinymce.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    tinymce.init({
+        selector: '#content',
+        plugins: 'autolink lists link image charmap print preview hr anchor pagebreak nonbreaking table code help',
+        toolbar: 'undo redo | formatselect | bold italic forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+        menubar: false,
+        height: 300
+    });
+
+    const imageUploadInput = document.getElementById('image-upload-input');
+    const imagePreview = document.getElementById('image-preview');
+    const previewPlaceholder = document.getElementById('preview-placeholder');
+
+    imageUploadInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+                previewPlaceholder.style.display = 'none';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.src = '';
+            imagePreview.style.display = 'none';
+            previewPlaceholder.style.display = 'block';
+        }
+    });
+});
+</script>
+{% endblock %}
