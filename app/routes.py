@@ -45,12 +45,13 @@ def inject_user_groups():
 @main.context_processor
 def inject_notifications():
     """
-    Injects the current user's unread notifications into the template context.
+    Injects the current user's unread notifications and their count into the template context.
     """
     if current_user.is_authenticated:
         unread_notifications = Notification.query.filter_by(user_id=current_user.id, is_read=False).order_by(Notification.created_at.desc()).all()
-        return dict(unread_notifications=unread_notifications)
-    return dict(unread_notifications=[]) # Return an empty list for anonymous users
+        unread_notifications_count = len(unread_notifications)
+        return dict(unread_notifications=unread_notifications, unread_notifications_count=unread_notifications_count)
+    return dict(unread_notifications=[], unread_notifications_count=0) # Return empty for anonymous users
 
 
 # --- Função Auxiliar para Salvar Imagens ---
@@ -62,7 +63,7 @@ def save_image(file, upload_folder):
             os.makedirs(upload_path)
         file_path = os.path.join(upload_path, filename)
         file.save(file_path)
-        return os.path.join(upload_folder, filename).replace('\\\\', '/')
+        return os.path.join(upload_folder, filename).replace('\\', '/')
     return None
 
 

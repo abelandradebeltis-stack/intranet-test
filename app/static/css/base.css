@@ -25,12 +25,7 @@ body {
 h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: 500; }
 a { text-decoration: none; color: var(--primary-color); }
 
-.container {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
+/* --- Componentes --- */
 .card {
     background: white;
     padding: 20px;
@@ -39,62 +34,107 @@ a { text-decoration: none; color: var(--primary-color); }
     border: 1px solid var(--border-color);
 }
 
-.card h4 {
-    margin-bottom: 10px;
-    color: var(--secondary-color);
-}
+.card h4 { margin-bottom: 10px; color: var(--secondary-color); }
+.card p { font-size: 14px; color: #6c757d; }
 
-.card p {
-    font-size: 14px;
-    color: #6c757d;
-}
-
-/* --- Estilos para Mensagens Flash --- */
-.flash-messages {
+/* --- Container de Notificação --- */
+.notification-container {
     position: relative;
-    margin: 1rem 0;
-    z-index: 100;
+    display: flex;
+    align-items: center;
 }
 
-.alert {
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border: 1px solid transparent;
-    border-radius: .25rem;
-    position: relative;
-}
-
-.alert-success {
-    color: #155724;
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-}
-
-.alert-error {
-    color: #721c24;
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-}
-
-.alert-warning {
-    color: #856404;
-    background-color: #fff3cd;
-    border-color: #ffeeba;
-}
-
-.alert .close-btn {
-    position: absolute;
-    top: 50%;
-    right: 1rem;
-    transform: translateY(-50%);
-    border: none;
-    background: none;
-    font-size: 1.5rem;
+.notification-icon {
     cursor: pointer;
-    color: inherit;
-    opacity: 0.7;
+    position: relative;
 }
 
-.alert .close-btn:hover {
-    opacity: 1;
+.notification-count {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* --- Dropdown de Notificação --- */
+.notification-dropdown {
+    display: none; /* Oculto por padrão */
+    position: absolute;
+    top: calc(100% + 10px); /* Posiciona abaixo do ícone com um espaçamento */
+    right: 0;
+    width: 320px;
+    background-color: var(--background-white);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.notification-dropdown.show {
+    display: block; /* Exibe quando a classe .show é adicionada */
+}
+
+.notification-header, .notification-footer {
+    padding: 12px 15px;
+    background-color: #f7f7f7;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.notification-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.notification-body {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item:hover {
+    background-color: #f0f2f5;
+}
+
+.notification-item p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.notification-item .notification-time {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 4px;
+    display: block;
+}
+
+.notification-footer {
+    border-top: 1px solid var(--border-color);
+    border-bottom: none;
+    text-align: center;
+}
+
+.notification-footer a {
+    font-weight: 500;
+    font-size: 0.9rem;
 }

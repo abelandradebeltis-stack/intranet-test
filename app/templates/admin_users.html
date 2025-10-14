@@ -739,6 +739,7 @@
                 : await api.createUser(username, password, selectedGroupIds);
     
             if (result.status === 'success') {
+                showToast(result.message, 'success');
                 closeAllModals();
                 selectedGroupId ? selectGroup(selectedGroupId) : loadAndRenderAllUsers();
             } else {
