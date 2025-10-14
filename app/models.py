@@ -144,6 +144,7 @@ class Notification(db.Model):
 
 class KnowledgeBaseArticle(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    kb_id = db.Column(db.Integer, unique=True, nullable=True)
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, nullable=False)
     image_path = db.Column(db.String(500), nullable=True)
@@ -153,6 +154,7 @@ class KnowledgeBaseArticle(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
+            'kb_id': self.kb_id,
             'title': self.title,
             'content': self.content,
             'image_path': self.image_path,
@@ -161,4 +163,4 @@ class KnowledgeBaseArticle(db.Model):
         }
 
     def __repr__(self):
-        return f"KnowledgeBaseArticle('{self.title}', '{self.created_at}')"
+        return f"KnowledgeBaseArticle('KB{self.kb_id:02d} - {self.title}', '{self.created_at}')"

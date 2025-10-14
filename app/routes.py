@@ -1,4 +1,3 @@
-
 import os
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, current_app
 from flask_login import login_user, logout_user, login_required, current_user
@@ -10,6 +9,26 @@ from werkzeug.utils import secure_filename
 
 main = Blueprint('main', __name__)
 
+def _get_next_kb_id():
+    """
+    Encontra o próximo ID sequencial disponível para um novo artigo da Base de Conhecimento.
+    Ele encontra o primeiro inteiro não utilizado como kb_id.
+    """
+    # Obtém todos os kb_ids usados e os ordena
+    used_ids = db.session.query(KnowledgeBaseArticle.kb_id).filter(KnowledgeBaseArticle.kb_id.isnot(None)).order_by(KnowledgeBaseArticle.kb_id).all()
+    # Converte a lista de tuplas em um conjunto para uma busca eficiente
+    used_ids = {row[0] for row in used_ids}
+
+    if not used_ids:
+        return 1
+
+    # Encontra o primeiro número inteiro ausente na sequência
+    max_id = max(used_ids)
+    i = 1
+    while i <= max_id + 1:
+        if i not in used_ids:
+            return i
+        i += 1
 
 @main.context_processor
 def inject_user_groups():
@@ -43,7 +62,7 @@ def save_image(file, upload_folder):
             os.makedirs(upload_path)
         file_path = os.path.join(upload_path, filename)
         file.save(file_path)
-        return os.path.join(upload_folder, filename).replace('\\', '/')
+        return os.path.join(upload_folder, filename).replace('\\\\', '/')
     return None
 
 
@@ -226,10 +245,11 @@ def create_article():
 
         if title and content:
             image_path = save_image(image_file, 'uploads/kb_images')
-            new_article = KnowledgeBaseArticle(title=title, content=content, image_path=image_path)
+            next_id = _get_next_kb_id()
+            new_article = KnowledgeBaseArticle(kb_id=next_id, title=title, content=content, image_path=image_path)
             db.session.add(new_article)
             db.session.commit()
-            flash('Artigo criado com sucesso!', 'success')
+            flash(f'Artigo KB{next_id:02d} criado com sucesso!', 'success')
             return redirect(url_for('main.knowledge_base'))
 
     return render_template('create_edit_article.html')
@@ -249,7 +269,7 @@ def edit_article(article_id):
             article.image_path = image_path
 
         db.session.commit()
-        flash('Artigo atualizado com sucesso!', 'success')
+        flash(f'Artigo KB{article.kb_id:02d} atualizado com sucesso!', 'success')
         return redirect(url_for('main.knowledge_base'))
 
     return render_template('create_edit_article.html', article=article)
@@ -259,9 +279,10 @@ def edit_article(article_id):
 @group_required('Administração')
 def delete_article(article_id):
     article = KnowledgeBaseArticle.query.get_or_404(article_id)
+    kb_id_to_report = article.kb_id
     db.session.delete(article)
     db.session.commit()
-    flash('Artigo deletado com sucesso!', 'success')
+    flash(f'Artigo KB{kb_id_to_report:02d} deletado com sucesso!', 'success')
     return redirect(url_for('main.knowledge_base'))
 
 # --- Rotas de Administração ---
