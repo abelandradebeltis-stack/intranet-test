@@ -229,6 +229,17 @@ def sistemas_ferramentas():
 
 # --- Rotas da Base de Conhecimento ---
 
+@main.route('/api/kb_article/<int:article_id>')
+@login_required
+def get_kb_article(article_id):
+    article = KnowledgeBaseArticle.query.get_or_404(article_id)
+    image_url = url_for('static', filename=article.image_path) if article.image_path else None
+    return jsonify({
+        'title': f"KB{article.kb_id:02d}: {article.title}",
+        'content': article.content,
+        'image_url': image_url
+    })
+
 @main.route('/sistemas/base-de-conhecimento')
 @login_required
 def knowledge_base():

@@ -21,6 +21,6 @@ flask create-admin
 echo "Granting full access to admin..."
 flask grant-full-access
 
-# Start Flask server
+# Start Flask server with debug mode enabled
 echo "Starting Flask server..."
-flask run --host=0.0.0.0 --port=8085
+flask run --host=0.0.0.0 --port=8085 --debug
