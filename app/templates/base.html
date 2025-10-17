@@ -122,7 +122,7 @@
                     </a>
                     <ul class="sidebar-submenu">
                         {% if 'Sistemas' in user_groups %}
-                        <li><a href="{{ url_for('main.sistemas_geral') }}" {% if request.endpoint == 'main.sistemas_geral' %}class="active"{% endif %}><span class="submenu-text">Visão Geral</span></a></li>
+                        <li><a href="{{ url_for('main.sistemas_geral') }}" {% if request.endpoint == 'main.sistemas_geral' %}class="active"{% endif %}><span class="submenu-text">Base de Conhecimento</span></a></li>
                         <li><a href="{{ url_for('main.sistemas_acessos') }}" {% if request.endpoint == 'main.sistemas_acessos' %}class="active"{% endif %}><span class="submenu-text">Meus Acessos</span></a></li>
                         <li><a href="{{ url_for('main.sistemas_solicitacoes') }}" {% if request.endpoint == 'main.sistemas_solicitacoes' %}class="active"{% endif %}><span class="submenu-text">Solicitar Acesso</span></a></li>
                         {% endif %}
@@ -275,6 +275,9 @@
                     <ul class="sidebar-submenu">
                         {% if 'TI - Administração' in user_groups or 'TI' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.ti_administracao' %}class="active"{% endif %}><span class="submenu-text">Administração</span></a></li>
+                        {% endif %}
+                        {% if 'TI - Clientes' in user_groups or 'TI' in user_groups %}
+                        <li><a href="{{ url_for('main.ti_clientes') }}" {% if request.endpoint == 'main.ti_clientes' %}class="active"{% endif %}><span class="submenu-text">Clientes</span></a></li>
                         {% endif %}
                         {% if 'TI - Chamados' in user_groups or 'TI' in user_groups %}
                         <li><a href="#" {% if request.endpoint == 'main.ti_chamados' %}class="active"{% endif %}><span class="submenu-text">Chamados</span></a></li>

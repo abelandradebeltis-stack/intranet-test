@@ -8,10 +8,7 @@
 
 {% block content %}
 <section class="dashboard">
-    <div class="card">
-        <h4>Visão Geral dos Sistemas</h4>
-        <p>Aqui você encontrará informações e links para os diversos sistemas utilizados na empresa.</p>
-    </div>
+    
 
     <div class="card mt-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -21,6 +18,16 @@
                     <i class="fas fa-cog me-2"></i>Gerenciar Base de Conhecimento
                 </a>
             {% endif %}
+        </div>
+
+        <!-- Barra de Busca -->
+        <div class="mb-4">
+            <form action="{{ url_for('main.sistemas_geral') }}" method="get" class="d-flex">
+                <input type="text" class="form-control me-2" name="q" placeholder="Buscar por palavra-chave ou ID (ex: 'KB12' ou 'backup')" value="{{ search_query or '' }}">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
         </div>
 
         <div class="row">
@@ -45,7 +52,16 @@
                 </div>
             {% else %}
                 <div class="col">
-                    <p class="text-center text-muted">Nenhum artigo na base de conhecimento ainda.</p>
+                    <div class="card text-center">
+                        <div class="card-body">
+                            {% if search_query %}
+                                <p class="card-text text-muted">Nenhum artigo encontrado para a busca: <strong>"{{ search_query }}"</strong>.</p>
+                                <a href="{{ url_for('main.sistemas_geral') }}" class="btn btn-sm btn-secondary">Limpar Busca</a>
+                            {% else %}
+                                <p class="text-center text-muted">Nenhum artigo na base de conhecimento ainda.</p>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             {% endfor %}
         </div>

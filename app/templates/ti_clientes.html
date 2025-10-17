@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Clientes - TI{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4">Clientes</h1>
+    <p>Painel de gerenciamento de clientes.</p>
+    <a href="{{ url_for('main.create_client') }}" class="btn btn-success mb-4">Criar Novo Cliente</a>
+    
+    <div class="row">
+        {% for client in clients %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    {% if client.logo %}
+                        {% if client.logo.startswith('http') %}
+                            <img src="{{ client.logo }}" alt="Logo {{ client.name }}" class="client-logo mb-3">
+                        {% else %}
+                            <img src="{{ url_for('static', filename=client.logo) }}" alt="Logo {{ client.name }}" class="client-logo mb-3">
+                        {% endif %}
+                    {% else %}
+                         <div class="client-logo-placeholder mb-3"></div>
+                    {% endif %}
+                    <h5 class="card-title">{{ client.name }}</h5>
+                    <p class="card-text">
+                        <span id="status-badge-{{ client.id }}" class="status-badge {{ 'status-ativo' if client.status == 'Ativo' else 'status-inativo' }}">
+                            {{ client.status }}
+                        </span>
+                    </p>
+                    <div class="d-flex justify-content-around">
+                        <a href="{{ url_for('main.ti_cliente_painel', client_id=client.id) }}" class="btn btn-primary btn-sm">Painel</a>
+                        <a href="{{ client.wiki_url }}" class="btn btn-primary btn-sm" target="_blank">Wiki</a>
+                        <a href="{{ url_for('main.edit_client', client_id=client.id) }}" class="btn btn-primary btn-sm">Editar</a>
+                        <form action="{{ url_for('main.delete_client', client_id=client.id) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja excluir este cliente?')">Excluir</button>
+                        </form>
+                    </div>
+                    <button class="btn btn-primary btn-sm mt-2" data-client-id="{{ client.id }}" onclick="toggleStatus(this)">Mudar Status</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.client-logo {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;  /* Garante que a imagem caiba completamente */
+    border-radius: 50%;
+    border: 2px solid #ddd;
+    background-color: #f8f9fa; /* Adiciona um fundo claro */
+    padding: 5px; /* Adiciona um pequeno preenchimento interno */
+    margin-left: auto;
+    margin-right: auto;
+}
+.client-logo-placeholder {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 2px solid #ddd;
+    background-color: #f8f9fa;
+    margin-left: auto;
+    margin-right: auto;
+}
+.status-badge {
+    display: inline-block;
+    padding: 0.3em 0.6em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+    color: #fff;
+}
+.status-ativo {
+    background-color: #28a745;
+}
+.status-inativo {
+    background-color: #dc3545;
+}
+</style>
+
+<script>
+function toggleStatus(button) {
+    const clientId = button.getAttribute('data-client-id');
+    fetch(`/api/clients/${clientId}/toggle-status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const badge = document.getElementById(`status-badge-${clientId}`);
+            badge.innerText = data.new_status;
+            if (data.new_status === 'Ativo') {
+                badge.classList.remove('status-inativo');
+                badge.classList.add('status-ativo');
+            } else {
+                badge.classList.remove('status-ativo');
+                badge.classList.add('status-inativo');
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

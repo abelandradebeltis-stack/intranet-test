@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Painel do Cliente - {{ client.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4">Painel do Cliente: {{ client.name }}</h1>
+    <div class="card">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center">
+                    {% if client.logo %}
+                        {% if client.logo.startswith('http') %}
+                            <img src="{{ client.logo }}" alt="Logo {{ client.name }}" class="client-logo mb-3">
+                        {% else %}
+                            <img src="{{ url_for('static', filename=client.logo) }}" alt="Logo {{ client.name }}" class="client-logo mb-3">
+                        {% endif %}
+                    {% else %}
+                         <div class="client-logo-placeholder mb-3"></div>
+                    {% endif %}
+                </div>
+                <div class="col-md-9">
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <th>Nome</th>
+                                <td>{{ client.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Status</th>
+                                <td>
+                                    <span id="status-badge-{{ client.id }}" class="status-badge {{ 'status-ativo' if client.status == 'Ativo' else 'status-inativo' }}">
+                                        {{ client.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Wiki</th>
+                                <td><a href="{{ client.wiki_url }}" target="_blank">{{ client.wiki_url if client.wiki_url else 'N/A' }}</a></td>
+                            </tr>
+                            <tr>
+                                <th>Criado em</th>
+                                <td>{{ client.created_at.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                            </tr>
+                            <tr>
+                                <th>Atualizado em</th>
+                                <td>{{ client.updated_at.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <a href="{{ url_for('main.ti_clientes') }}" class="btn btn-primary">Voltar para Clientes</a>
+                    <a href="{{ url_for('main.edit_client', client_id=client.id) }}" class="btn btn-primary">Editar Cliente</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.client-logo {
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+    border-radius: 50%;
+    border: 2px solid #ddd;
+    background-color: #f8f9fa;
+    padding: 10px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.client-logo-placeholder {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 2px solid #ddd;
+    background-color: #f8f9fa;
+    margin-left: auto;
+    margin-right: auto;
+}
+.status-badge {
+    display: inline-block;
+    padding: 0.3em 0.6em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+    color: #fff;
+}
+.status-ativo {
+    background-color: #28a745;
+}
+.status-inativo {
+    background-color: #dc3545;
+}
+</style>
+{% endblock %}

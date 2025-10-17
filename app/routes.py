@@ -1,7 +1,7 @@
 import os
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, current_app
 from flask_login import login_user, logout_user, login_required, current_user
-from .models import User, Group, News, Event, AccessRequest, Notification, KnowledgeBaseArticle
+from .models import User, Group, News, Event, AccessRequest, Notification, KnowledgeBaseArticle, Client
 from . import db
 from .decorators import group_required
 from datetime import datetime
@@ -14,15 +14,12 @@ def _get_next_kb_id():
     Encontra o próximo ID sequencial disponível para um novo artigo da Base de Conhecimento.
     Ele encontra o primeiro inteiro não utilizado como kb_id.
     """
-    # Obtém todos os kb_ids usados e os ordena
     used_ids = db.session.query(KnowledgeBaseArticle.kb_id).filter(KnowledgeBaseArticle.kb_id.isnot(None)).order_by(KnowledgeBaseArticle.kb_id).all()
-    # Converte a lista de tuplas em um conjunto para uma busca eficiente
     used_ids = {row[0] for row in used_ids}
 
     if not used_ids:
         return 1
 
-    # Encontra o primeiro número inteiro ausente na sequência
     max_id = max(used_ids)
     i = 1
     while i <= max_id + 1:
@@ -32,29 +29,19 @@ def _get_next_kb_id():
 
 @main.context_processor
 def inject_user_groups():
-    """
-    Injects the current user's group names into the template context.
-    This allows checking for group membership directly in Jinja2 templates.
-    e.g., {% if 'Marketing' in user_groups %}
-    """
     if current_user.is_authenticated:
         user_groups = {group.name for group in current_user.groups}
         return dict(user_groups=user_groups)
-    return dict(user_groups=set()) # Return an empty set for anonymous users
+    return dict(user_groups=set())
 
 @main.context_processor
 def inject_notifications():
-    """
-    Injects the current user's unread notifications and their count into the template context.
-    """
     if current_user.is_authenticated:
         unread_notifications = Notification.query.filter_by(user_id=current_user.id, is_read=False).order_by(Notification.created_at.desc()).all()
         unread_notifications_count = len(unread_notifications)
         return dict(unread_notifications=unread_notifications, unread_notifications_count=unread_notifications_count)
-    return dict(unread_notifications=[], unread_notifications_count=0) # Return empty for anonymous users
+    return dict(unread_notifications=[], unread_notifications_count=0)
 
-
-# --- Função Auxiliar para Salvar Imagens ---
 def save_image(file, upload_folder):
     if file and file.filename != '':
         filename = secure_filename(file.filename)
@@ -65,9 +52,6 @@ def save_image(file, upload_folder):
         file.save(file_path)
         return os.path.join(upload_folder, filename).replace('\\', '/')
     return None
-
-
-# --- Rotas Públicas e de Autenticação ---
 
 @main.route('/')
 def welcome():
@@ -85,14 +69,12 @@ def login():
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
 
-        MAX_ATTEMPTS = 4  # limite de tentativas antes do bloqueio
+        MAX_ATTEMPTS = 4
 
-        # --- Verifica se o usuário existe ---
         if not user:
             flash('Usuário ou senha inválidos. Por favor, tente novamente.', 'error')
             return render_template('login.html')
 
-        # --- Verifica bloqueios e suspensão ---
         if user.is_locked:
             flash('Sua conta foi bloqueada por excesso de tentativas. Por favor, entre em contato com o suporte.', 'error')
             return render_template('login.html')
@@ -103,9 +85,7 @@ def login():
             flash('Sua conta está suspensa. Entre em contato com o administrador.', 'error')
             return render_template('login.html')
 
-        # --- Verifica senha ---
         if user.check_password(password):
-            # Zera o contador de falhas, se necessário
             if (user.failed_login_attempts or 0) > 0:
                 user.failed_login_attempts = 0
                 db.session.commit()
@@ -113,15 +93,12 @@ def login():
             login_user(user)
             return redirect(url_for('main.dashboard'))
 
-        # --- Senha incorreta ---
         if user.username != 'admin':
             user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
 
-            # Bloqueia automaticamente se atingir o limite
             if user.failed_login_attempts >= MAX_ATTEMPTS:
                 user.is_locked = True
 
-                # Notificar administradores
                 admins = User.query.join(User.groups).filter(Group.name == 'Administração').all()
                 for admin in admins:
                     notification = Notification(
@@ -142,19 +119,15 @@ def login():
 
     return render_template('login.html')
 
-
 @main.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('main.welcome'))
 
-# --- Rotas Internas Gerais ---
-
 @main.route('/dashboard')
 @login_required
 def dashboard():
-    # Para administradores, buscar as 5 últimas solicitações pendentes
     if 'Administração' in {group.name for group in current_user.groups}:
         pending_requests = AccessRequest.query.filter_by(status='Pendente').order_by(AccessRequest.requested_at.desc()).limit(5).all()
     else:
@@ -178,12 +151,31 @@ def notifications():
     all_notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).all()
     return render_template('notifications.html', notifications=all_notifications)
 
-# --- Rotas de Sistemas ---
 @main.route('/sistemas')
 @login_required
 def sistemas_geral():
-    articles = KnowledgeBaseArticle.query.order_by(KnowledgeBaseArticle.created_at.desc()).all()
-    return render_template('sistemas_geral.html', articles=articles)
+    search_query = request.args.get('q', '')
+    query = KnowledgeBaseArticle.query
+
+    if search_query:
+        numeric_part = ''.join(filter(str.isdigit, search_query))
+        search_filter = []
+        if numeric_part:
+            try:
+                kb_id = int(numeric_part)
+                search_filter.append(KnowledgeBaseArticle.kb_id == kb_id)
+            except ValueError:
+                pass
+        
+        search_term = f"%{search_query}%"
+        search_filter.append(KnowledgeBaseArticle.title.ilike(search_term))
+        search_filter.append(KnowledgeBaseArticle.content.ilike(search_term))
+
+        if search_filter:
+            query = query.filter(db.or_(*search_filter))
+
+    articles = query.order_by(KnowledgeBaseArticle.created_at.desc()).all()
+    return render_template('sistemas_geral.html', articles=articles, search_query=search_query)
 
 @main.route('/sistemas/acessos')
 @login_required
@@ -227,7 +219,34 @@ def sistemas_suporte():
 def sistemas_ferramentas():
     return render_template('sistemas_ferramentas.html')
 
-# --- Rotas da Base de Conhecimento ---
+@main.route('/ti/clientes')
+@login_required
+@group_required('TI')
+def ti_clientes():
+    clients = Client.query.all()
+    return render_template('ti_clientes.html', clients=clients)
+
+@main.route('/ti/clientes/<int:client_id>/painel')
+@login_required
+@group_required('TI')
+def ti_cliente_painel(client_id):
+    client = Client.query.get_or_404(client_id)
+    return render_template('ti_cliente_panel.html', client=client)
+
+@main.route('/api/clients/<int:client_id>/toggle-status', methods=['POST'])
+@login_required
+@group_required('TI')
+def toggle_client_status(client_id):
+    client = Client.query.get_or_404(client_id)
+    
+    if client.status == 'Ativo':
+        client.status = 'Inativo'
+    else:
+        client.status = 'Ativo'
+    
+    db.session.commit()
+    
+    return jsonify({'status': 'success', 'new_status': client.status})
 
 @main.route('/api/kb_article/<int:article_id>')
 @login_required
@@ -342,7 +361,6 @@ def update_request_status(request_id):
     req.status = status
     req.admin_notes = admin_notes
 
-    # Create a notification for the user
     notification_message = f"Sua solicitação para '{req.sistema}' foi atualizada para: {status}."
     notification = Notification(
         message=notification_message,
@@ -454,14 +472,11 @@ def create_user_api():
     new_user = User(username=username)
     new_user.set_password(password)
 
-    # Buscar grupos padrão
     default_group_names = ['Inicio', 'Contato', 'RH Externo']
     default_groups = Group.query.filter(Group.name.in_(default_group_names)).all()
     
-    # Unir IDs de grupos selecionados com os padrões (usando set para evitar duplicatas)
     final_group_ids = set(group_ids) | {g.id for g in default_groups}
 
-    # Associar grupos ao novo usuário
     if final_group_ids:
         groups = Group.query.filter(Group.id.in_(list(final_group_ids))).all()
         if len(groups) != len(final_group_ids):
@@ -493,11 +508,9 @@ def update_user_api(user_id):
         user.set_password(password)
         
     if group_ids is not None:
-        # Lógica para proteger o grupo '_acesso_total_' do admin
         if user.username == 'admin':
             acesso_total_group = Group.query.filter_by(name='_acesso_total_').first()
             if acesso_total_group:
-                # Garante que o ID do grupo de acesso total esteja na lista
                 if acesso_total_group.id not in group_ids:
                     group_ids.append(acesso_total_group.id)
 
@@ -664,3 +677,53 @@ def eventos_deletar(event_id):
     db.session.commit()
     flash('Evento deletado com sucesso!', 'success')
     return redirect(url_for('main.administracao_publicacoes'))
+
+@main.route('/ti/clientes/novo', methods=['GET', 'POST'])
+@login_required
+@group_required('TI')
+def create_client():
+    if request.method == 'POST':
+        name = request.form['name']
+        contact_person = request.form.get('contact_person')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+
+        if name:
+            new_client = Client(
+                name=name,
+                contact_person=contact_person,
+                email=email,
+                phone=phone
+            )
+            db.session.add(new_client)
+            db.session.commit()
+            flash('Cliente criado com sucesso!', 'success')
+            return redirect(url_for('main.ti_clientes'))
+
+    return render_template('create_edit_client.html')
+
+@main.route('/ti/clientes/editar/<int:client_id>', methods=['GET', 'POST'])
+@login_required
+@group_required('TI')
+def edit_client(client_id):
+    client = Client.query.get_or_404(client_id)
+    if request.method == 'POST':
+        client.name = request.form['name']
+        client.contact_person = request.form.get('contact_person')
+        client.email = request.form.get('email')
+        client.phone = request.form.get('phone')
+        db.session.commit()
+        flash('Cliente atualizado com sucesso!', 'success')
+        return redirect(url_for('main.ti_clientes'))
+
+    return render_template('create_edit_client.html', client=client)
+
+@main.route('/ti/clientes/deletar/<int:client_id>', methods=['POST'])
+@login_required
+@group_required('TI')
+def delete_client(client_id):
+    client = Client.query.get_or_404(client_id)
+    db.session.delete(client)
+    db.session.commit()
+    flash('Cliente deletado com sucesso!', 'success')
+    return redirect(url_for('main.ti_clientes'))

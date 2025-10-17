@@ -110,6 +110,7 @@ class AccessRequest(db.Model):
     admin_notes = db.Column(db.Text, nullable=True)
     requested_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_archived = db.Column(db.Boolean, default=False, nullable=False)
 
     def to_dict(self):
         return {
@@ -120,7 +121,8 @@ class AccessRequest(db.Model):
             'status': self.status,
             'admin_notes': self.admin_notes,
             'requested_at': self.requested_at.isoformat(),
-            'updated_at': self.updated_at.isoformat()
+            'updated_at': self.updated_at.isoformat(),
+            'is_archived': self.is_archived
         }
 
 class Notification(db.Model):
@@ -164,3 +166,31 @@ class KnowledgeBaseArticle(db.Model):
 
     def __repr__(self):
         return f"KnowledgeBaseArticle('KB{self.kb_id:02d} - {self.title}', '{self.created_at}')"
+
+class Client(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), unique=True, nullable=False)
+    logo = db.Column(db.String(500), nullable=True)
+    contact_person = db.Column(db.String(150), nullable=True)
+    email = db.Column(db.String(150), nullable=True)
+    phone = db.Column(db.String(50), nullable=True)
+    status = db.Column(db.String(50), nullable=False, default='Ativo') # Ativo, Inativo
+    panel_url = db.Column(db.String(500), nullable=True)
+    wiki_url = db.Column(db.String(500), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'logo': self.logo,
+            'status': self.status,
+            'panel_url': self.panel_url,
+            'wiki_url': self.wiki_url,
+            'contact_person': self.contact_person,
+            'email': self.email,
+            'phone': self.phone,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
