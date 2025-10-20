@@ -10,6 +10,10 @@
 <div class="container">
     <h2 class="text-center text-secondary mb-4">Ferramentas e Utilitários</h2>
 
+    <div class="mb-4">
+        <input type="text" id="toolSearch" class="form-control" placeholder="Pesquisar ferramenta...">
+    </div>
+
     {% set tools = [
         {
             "name": "Sonax",
@@ -93,7 +97,7 @@
         }
     ] %}
 
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-4">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-4" id="toolCards">
         {% for tool in tools %}
         <div class="col">
             <a href="{{ tool.url }}" target="_blank" class="text-decoration-none text-dark">
@@ -108,4 +112,28 @@
         {% endfor %}
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('toolSearch');
+    const toolCardsContainer = document.getElementById('toolCards');
+    const toolCards = toolCardsContainer.getElementsByClassName('col');
+
+    searchInput.addEventListener('keyup', function() {
+        const searchTerm = searchInput.value.toLowerCase();
+
+        for (let i = 0; i < toolCards.length; i++) {
+            const card = toolCards[i];
+            const toolName = card.querySelector('.card-title').textContent.toLowerCase();
+            
+            if (toolName.includes(searchTerm)) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        }
+    });
+});
+</script>
+
 {% endblock %}

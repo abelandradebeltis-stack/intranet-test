@@ -139,7 +139,7 @@
                 </li>
                 {% endif %}
 
-                {% if 'Contato - Ramais' in user_groups or 'Contato - E-mails' in user_groups or 'Contato - Discord' in user_groups or 'Contato - Whatsapp' in user_groups or 'Contato' in user_groups %}
+                {% if 'Contato - Ramais' in user_groups or 'Contato - E-mails' in user_groups or 'Contato' in user_groups %}
                 <li class="has-submenu {% if request.endpoint.startswith('main.ramais') %}is-open{% endif %}">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-address-book"></i>
@@ -152,12 +152,6 @@
                         {% endif %}
                         {% if 'Contato - E-mails' in user_groups or 'Contato' in user_groups %}
                         <li><a href="#"><span class="submenu-text">E-mails</span></a></li>
-                        {% endif %}
-                        {% if 'Contato - Discord' in user_groups or 'Contato' in user_groups %}
-                        <li><a href="#"><span class="submenu-text">Discord</span></a></li>
-                        {% endif %}
-                        {% if 'Contato - Whatsapp' in user_groups or 'Contato' in user_groups %}
-                        <li><a href="#"><span class="submenu-text">Whatsapp</span></a></li>
                         {% endif %}
                     </ul>
                 </li>
