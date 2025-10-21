@@ -1,196 +1,75 @@
 
-from . import db
 from flask_login import UserMixin
-from werkzeug.security import check_password_hash, generate_password_hash
-from datetime import datetime, date
+from werkzeug.security import check_password_hash
 
-# Association table for the many-to-many relationship between User and Group
-user_group = db.Table('user_group',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('group_id', db.Integer, db.ForeignKey('group.id'))
-)
+# Não há mais classes db.Model. Em vez disso, criamos uma classe User
+# que atua como um invólucro para o documento recuperado do MongoDB para
+# torná-lo compatível com o Flask-Login.
 
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-    failed_login_attempts = db.Column(db.Integer, default=0)
-    is_locked = db.Column(db.Boolean, default=False) # This is the backend field for login blocking
-    is_blocked = db.Column(db.Boolean, default=False) # This is for manual admin blocking
-    is_suspended = db.Column(db.Boolean, default=False)
-    groups = db.relationship('Group', secondary=user_group, backref='users')
-    news = db.relationship('News', backref='author', lazy=True)
-    events = db.relationship('Event', backref='creator', lazy=True)
-    requests = db.relationship('AccessRequest', backref='requester', lazy=True)
+class User(UserMixin):
+    """
+    Uma classe invólucro para documentos de usuário do MongoDB para torná-los
+    compatíveis com o Flask-Login.
+    """
+    def __init__(self, user_doc):
+        self.user_doc = user_doc
 
-    def set_password(self, password):
-        self.password = generate_password_hash(password, method='pbkdf2:sha256')
+    @property
+    def id(self):
+        # O Flask-Login espera que o id seja uma string.
+        # O _id do MongoDB é um ObjectId, então nós o convertemos.
+        return str(self.user_doc.get('_id'))
+
+    @property
+    def username(self):
+        return self.user_doc.get('username')
+
+    # Propriedades do Flask-Login
+    @property
+    def is_active(self):
+        # Você pode definir o que "ativo" significa. Por exemplo, não suspenso ou bloqueado.
+        return not self.user_doc.get('is_suspended', False) and not self.user_doc.get('is_blocked', False)
+
+    def get_id(self):
+        # Este método é exigido pelo Flask-Login.
+        return self.id
 
     def check_password(self, password):
-        return check_password_hash(self.password, password)
-
-    def is_in_group(self, group_name):
-        for group in self.groups:
-            if group.name == group_name:
-                return True
+        """Verifica a senha fornecida contra o hash armazenado."""
+        stored_password_hash = self.user_doc.get('password')
+        if stored_password_hash:
+            return check_password_hash(stored_password_hash, password)
         return False
 
+    def is_in_group(self, group_name):
+        """
+        Verifica se o usuário pertence a um grupo.
+        Isso assume que 'groups' é uma lista de nomes de grupos ou IDs de grupos
+        armazenados dentro do documento do usuário.
+        """
+        from app import pymongo
+        # Isso assume que o campo 'groups' no documento do usuário armazena ObjectIds para a coleção de grupos.
+        group_ids = self.user_doc.get('groups', [])
+        group = pymongo.db.groups.find_one({"name": group_name, "_id": {"$in": group_ids}})
+        return group is not None
+
     def to_dict(self):
         """
-        Serializes the User object to a dictionary.
-        The key 'is_login_blocked' is intentionally used to map the 'is_locked' field,
-        as this is what the frontend template expects.
+        Serializa o objeto User para um dicionário, convertendo ObjectId.
         """
-        return {
-            'id': self.id,
-            'username': self.username,
-            'is_login_blocked': self.is_locked, # Maps backend is_locked to frontend is_login_blocked
-            'is_blocked': self.is_blocked,
-            'is_suspended': self.is_suspended
-        }
+        doc = self.user_doc.copy()
+        doc['id'] = str(doc.get('_id')) # Converte ObjectId para string para serialização JSON
+        
+        # Mapeia is_locked para is_login_blocked para compatibilidade com o frontend
+        doc['is_login_blocked'] = doc.get('is_locked', False)
+        
+        # Remove dados sensíveis
+        doc.pop('password', None)
+        doc.pop('_id', None) # Remove o _id original para evitar redundância
+        
+        return doc
 
-class Group(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(150), unique=True, nullable=False)
-    parent_id = db.Column(db.Integer, db.ForeignKey('group.id'))
-    children = db.relationship('Group', backref=db.backref('parent', remote_side=[id]))
-
-class News(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    image_url = db.Column(db.String(500), nullable=True)
-    publication_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'title': self.title,
-            'content': self.content,
-            'image_url': self.image_url,
-            'publication_date': self.publication_date.isoformat(),
-            'author': self.author.to_dict()
-        }
-
-    def __repr__(self):
-        return f"News('{self.title}', '{self.publication_date}')"
-
-class Event(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    image_url = db.Column(db.String(500), nullable=True)
-    event_date = db.Column(db.Date, nullable=False)
-    publication_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    location = db.Column(db.String(200), nullable=True)
-    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'title': self.title,
-            'description': self.description,
-            'image_url': self.image_url,
-            'event_date': self.event_date.isoformat() if self.event_date else None,
-            'publication_date': self.publication_date.isoformat(),
-            'location': self.location,
-            'creator': self.creator.to_dict()
-        }
-
-    def __repr__(self):
-        return f"Event('{self.title}', '{self.event_date}')"
-
-class AccessRequest(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    sistema = db.Column(db.String(150), nullable=False)
-    justificativa = db.Column(db.Text, nullable=False)
-    status = db.Column(db.String(50), nullable=False, default='Pendente')  # Status: Pendente, Em andamento, Liberado, Negado
-    admin_notes = db.Column(db.Text, nullable=True)
-    requested_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
-    is_archived = db.Column(db.Boolean, default=False, nullable=False)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'user': self.requester.username,
-            'sistema': self.sistema,
-            'justificativa': self.justificativa,
-            'status': self.status,
-            'admin_notes': self.admin_notes,
-            'requested_at': self.requested_at.isoformat(),
-            'updated_at': self.updated_at.isoformat(),
-            'is_archived': self.is_archived
-        }
-
-class Notification(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    message = db.Column(db.String(500), nullable=False)
-    link = db.Column(db.String(500), nullable=True)
-    is_read = db.Column(db.Boolean, default=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    user = db.relationship('User', backref='notifications')
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'message': self.message,
-            'link': self.link,
-            'is_read': self.is_read,
-            'created_at': self.created_at.isoformat()
-        }
-
-class KnowledgeBaseArticle(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    kb_id = db.Column(db.Integer, unique=True, nullable=True)
-    title = db.Column(db.String(200), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    image_path = db.Column(db.String(500), nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'kb_id': self.kb_id,
-            'title': self.title,
-            'content': self.content,
-            'image_path': self.image_path,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat()
-        }
-
-    def __repr__(self):
-        return f"KnowledgeBaseArticle('KB{self.kb_id:02d} - {self.title}', '{self.created_at}')"
-
-class Client(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(150), unique=True, nullable=False)
-    logo = db.Column(db.String(500), nullable=True)
-    contact_person = db.Column(db.String(150), nullable=True)
-    email = db.Column(db.String(150), nullable=True)
-    phone = db.Column(db.String(50), nullable=True)
-    status = db.Column(db.String(50), nullable=False, default='Ativo') # Ativo, Inativo
-    panel_url = db.Column(db.String(500), nullable=True)
-    wiki_url = db.Column(db.String(500), nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'logo': self.logo,
-            'status': self.status,
-            'panel_url': self.panel_url,
-            'wiki_url': self.wiki_url,
-            'contact_person': self.contact_person,
-            'email': self.email,
-            'phone': self.phone,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat()
-        }
+# Nota: As outras classes (Group, News, Event, etc.) DESAPARECERAM deste arquivo.
+# Todas as operações nelas agora serão feitas diretamente no objeto pymongo.db
+# no arquivo de rotas (por exemplo, pymongo.db.news.find_one(...)).
+# Esta é uma mudança fundamental do padrão ORM.

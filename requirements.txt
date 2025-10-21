@@ -1,10 +1,7 @@
 Flask>=2.2
 gunicorn
-psycopg2-binary
-SQLAlchemy
-Flask-Migrate
-alembic
-redis
+flask-pymongo[srv]
+werkzeug
 flask-login
 python-dotenv
 ldap3
