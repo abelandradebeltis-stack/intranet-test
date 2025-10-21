@@ -1,26 +1,24 @@
 #!/bin/bash
 set -e
 
-# Unset DATABASE_URL to force fallback to SQLite
-unset DATABASE_URL
+# Opcional: Carregar variáveis de ambiente de um arquivo .env se estiver usando um
+if [ -f .env ]; then
+  export $(cat .env | sed 's/#.*//g' | xargs)
+fi
 
 export FLASK_APP=app:create_app
 
-# Activate virtual environment
+# Ativar ambiente virtual
 source .venv/bin/activate
 
-# Run database migrations
-echo "Running database migrations..."
-flask db upgrade
+# Não há mais migrações de banco de dados para rodar com o MongoDB desta forma.
 
-# Create admin user
-echo "Creating admin user..."
+# O comando create-admin foi reescrito para funcionar com o MongoDB.
+# Ele irá verificar se o admin já existe antes de tentar criar.
+echo "Verificando/Criando usuário admin..."
 flask create-admin
 
-# Grant full access to admin
-echo "Granting full access to admin..."
-flask grant-full-access
+# Não há mais o comando grant-full-access. A lógica de grupo é diferente agora.
 
-# Start Flask server with debug mode enabled
-echo "Starting Flask server..."
+echo "Iniciando o servidor Flask..."
 flask run --host=0.0.0.0 --port=8085 --debug
