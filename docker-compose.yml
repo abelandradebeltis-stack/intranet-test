@@ -1,45 +1,41 @@
+
 version: '3.8'
+
 services:
   web:
-    build: ./app
-    restart: unless-stopped
-    env_file: ./app/.env
-    depends_on:
-      - db
-      - redis
-    networks:
-      - intranet-net
-  db:
-    image: postgres:15
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: intranet
-      POSTGRES_PASSWORD: intranet_pass
-      POSTGRES_DB: intranet_db
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    networks:
-      - intranet-net
-  redis:
-    image: redis:7
-    restart: unless-stopped
-    networks:
-      - intranet-net
-  nginx:
-    image: nginx:stable-alpine
-    restart: unless-stopped
+    build: .  # Constrói a imagem a partir do Dockerfile na raiz do projeto
+    container_name: flask_web_app
     ports:
-      - "80:80"
-      - "443:443"
+      - "8085:8085"  # Mapeia a porta do container para a porta do seu host
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./app/static:/var/www/static
+      - .:/app  # Monta o diretório atual do projeto dentro do container em /app
+    environment:
+      # Define a URI de conexão para o serviço MongoDB definido abaixo
+      # O nome 'mongo' é o nome do serviço do banco de dados
+      - MONGO_URI=mongodb://mongo:27017/intranet
+      - FLASK_APP=app:create_app
+      - FLASK_DEBUG=1
+    # Garante que o serviço do MongoDB inicie antes do serviço da web
     depends_on:
-      - web
-    networks:
-      - intranet-net
+      - mongo
+    # Comando para iniciar a aplicação
+    # 1. Espera o MongoDB estar pronto para aceitar conexões
+    # 2. Executa o comando para criar o admin (se não existir)
+    # 3. Inicia o servidor de desenvolvimento do Flask
+    command: >
+      sh -c "
+        # O comando create-admin agora está idempotente e pode ser executado a cada inicialização
+        flask create-admin && \
+        flask run --host=0.0.0.0 --port=8085
+      "
+
+  mongo:
+    image: mongo:latest  # Usa a imagem oficial mais recente do MongoDB
+    container_name: mongodb_container
+    ports:
+      - "27017:27017"  # Expõe a porta padrão do MongoDB para o host (opcional, para debug)
+    volumes:
+      - mongo-data:/data/db  # Persiste os dados do banco de dados em um volume nomeado
+
 volumes:
-  db-data:
-networks:
-  intranet-net:
-    driver: bridge
+  mongo-data:  # Define o volume nomeado para persistência dos dados do MongoDB
